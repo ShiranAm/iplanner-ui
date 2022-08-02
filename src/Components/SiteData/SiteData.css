@@ -1,0 +1,21 @@
+#site-data-h1 {
+    padding-top: 20px;
+    display: block;
+}
+
+.site-sata-h2 {
+    padding-top: 20px;
+}
+
+.upload-section {
+    padding-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+}
+
+.uploadBtn {
+    width: 150px;
+    text-align: center;
+}
