@@ -16,13 +16,46 @@ export async function uploadFile(formData) {
 }
 
 export async function getSiteData() {
-    const path = `${baseUrl}/site-data`
-    const response = await fetch(path, {
+    const url = `${baseUrl}/site-data`
+    const response = await fetch(url, {
         headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': "*"
         }
     });
+    const { status, statusText } = response;
+    const resJson = await response.json();
+    let result = {};
+    if (status === 200) {
+        if (resJson instanceof Array) {
+            result = {
+                success: true,
+                message: statusText,
+                statusCode: status,
+                list: resJson
+            };
+        } else if (typeof resJson === 'string') {
+            result = {
+                success: true,
+                message: statusText,
+                statusCode: status,
+                stringResult: resJson
+            };
+        } else {
+            result = {
+                success: true,
+                message: statusText,
+                statusCode: status,
+                ...resJson
+            }
+        }
+    } else {
+        result = {
+            success: false,
+            message: resJson.message,
+            statusCode: status
+        }
+    }
 
-    return await response.json();
+    return result;
 }

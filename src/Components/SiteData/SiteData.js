@@ -32,12 +32,14 @@ class SiteData extends Component {
             formData.append('file', this.state.selectedFile, this.state.selectedFile.name);
 
             this.setState({isUploading: true});
-            uploadFile(formData).then((response) => {
+            uploadFile(formData).then(async (response) => {
                 if (response && response.status === 200) {
                     this.setState({isUploading: false});
-                    const existingData = getSiteData().data;
-                    this.setState({existingFiles: existingData});
-                    console.log(this.state.exis tingFiles);
+                    const existingData = await getSiteData();
+                    if (existingData && existingData.statusCode === 200) {
+                        this.setState({existingFiles: existingData}.list);
+                        console.log(this.state.existingFiles);
+                    }
                 }
             });
         }
