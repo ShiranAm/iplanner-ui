@@ -15,7 +15,7 @@ function SideBar() {
         <>
             <div className="sidebar">
                 <Link to="#" className='menu-bars'>
-                    <FaIcons.FaBars onClick={showSidebar}/>
+                    <FaIcons.FaBars onClick={showSidebar} color='#fff'/>
                 </Link>
             </div>
             <nav className={sidebar? 'nav-menu active' : 'nav-menu'}>

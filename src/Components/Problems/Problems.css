@@ -1,0 +1,27 @@
+#problems-h1 {
+    padding-top: 20px;
+}
+
+.problems-h2 {
+    padding-top: 20px;
+}
+.collapse-section {
+    width: 500px;
+    align-items: start;
+    text-align: left;
+    padding-top: 20px;
+    padding-left: 20px
+}
+
+.ant-collapse .ant-collapse-icon-position-start {
+    width:inherit;
+}
+
+.ant-drawer-title {
+    font-weight: 800 !important;
+    color: #060b26 !important;
+}
+
+.ant-row .ant-form-item {
+    margin-right: 0px !important;
+}

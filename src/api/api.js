@@ -15,13 +15,11 @@ export async function uploadFile(formData) {
     return await axios.post(path, formData, config);
 }
 
-export async function getSiteData() {
-    const url = `${baseUrl}/site-data`
+async function baseRequest(url, method, headers, data) {
     const response = await fetch(url, {
-        headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': "*"
-        }
+        method: method,
+        headers,
+        body: data
     });
     const { status, statusText } = response;
     const resJson = await response.json();
@@ -57,5 +55,44 @@ export async function getSiteData() {
         }
     }
 
+    return result;
+}
+
+export async function getSiteData() {
+    const url = `${baseUrl}/site-data`;
+    const headers = {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function deleteFile(fileId) {
+    const url = `${baseUrl}/site-data/${fileId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'DELETE', headers);
+    return result;
+}
+
+export async function createProblem(fileId, title) {
+    const url = `${baseUrl}/problem`;
+    const data = {
+        'site_data_id': fileId,
+        'title': title
+    }
+
+    console.log(data)
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers, JSON.stringify(data));
     return result;
 }
