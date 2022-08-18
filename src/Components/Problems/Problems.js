@@ -37,11 +37,11 @@ function Problems(props) {
     fetchData();
   }, []);
 
-  columns = [
-    {
-      
-    }
-  ]
+ // /* columns = [
+ //    {
+ //
+ //    }*/
+ //  ]
 
   const onSelectedFile = (fileId) => {
     setSelectedFile(fileId)
