@@ -18,7 +18,8 @@
     "mobx": "^6.0.4",
     "mobx-react": "^7.0.5",
     "babel-preset-mobx": "^2.0.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "antd-weekly-calendar": "^1.1.2"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -96,3 +96,25 @@ export async function createProblem(fileId, title) {
     const result = await baseRequest(url, 'POST', headers, JSON.stringify(data));
     return result;
 }
+
+export async function getSolutionByProblemId(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/solution`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function getProblemById(problemId) {
+    const url = `${baseUrl}/problems/${problemId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
