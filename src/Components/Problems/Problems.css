@@ -25,3 +25,12 @@
 .ant-row .ant-form-item {
     margin-right: 0px !important;
 }
+
+.actionContainer button {
+    border: transparent;
+    background: transparent;
+}
+
+.actionContainer svg {
+    fill: dodgerblue;
+}

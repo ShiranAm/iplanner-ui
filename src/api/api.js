@@ -87,12 +87,77 @@ export async function createProblem(fileId, title) {
         'title': title
     }
 
-    console.log(data)
     const headers = {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': "*"
     };
 
     const result = await baseRequest(url, 'POST', headers, JSON.stringify(data));
+    return result;
+}
+
+export async function getAllProblems() {
+    const url = `${baseUrl}/problem`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function deleteProblem(problemId) {
+    const url = `${baseUrl}/problems/${problemId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'DELETE', headers);
+    return result;
+}
+
+export async function playProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/play`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
+    return result;
+}
+
+export async function pauseProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/pause`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
+    return result;
+}
+
+export async function resumeProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/resume`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
+    return result;
+}
+
+export async function stopProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/stop`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
     return result;
 }
