@@ -1,24 +1,74 @@
 import React, {useEffect, useState} from "react";
-import { getSolutionByProblemId, getProblemById, getSiteData } from "../../api/api";
-// import { Button, Input, Row, Col, Table } from "antd";
-// import { DeleteFilled } from '@ant-design/icons';
+import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions } from "../../api/api";
+import { Table } from "antd";
+import { CalendarOutlined } from '@ant-design/icons';
 // import {isNull} from "lodash";
 // import './SiteData.css'
 import { WeeklyCalendar } from 'antd-weekly-calendar';
 
 
 function Solutions(props) {
+
     const [calendarEvents, setCalendarEvents] = useState(false);
+    const [savedSolutions, setSolutions] = useState(false);
+
+    const savedSolutionsTableCols = [
+        {
+            title: 'Id',
+            dataIndex: 'id',
+            key: 'id',
+            width: "30%"
+        },
+        {
+            title: 'Problem Id',
+            dataIndex: 'problem_id',
+            key: 'problem_id',
+            width: "30%"
+        },
+        {
+            title: 'Title',
+            dataIndex: 'title',
+            key: 'title',
+            width: "100%"
+        },
+        {
+            title: 'Fitness Score',
+            dataIndex: 'fitness',
+            key: 'fitness',
+            width: "100%"
+        },
+        // {
+        //     title: '',
+        //     key: 'action',
+        //     width: "20%",
+        //     render: (data) => (<Button onClick={() => handleShowSolution(data.id)}><CalendarOutlined /></Button>)
+        //
+        // }
+    ]
+
+    // const handleShowSolution = async (solutionId) => {
+    //
+    //     console.log("solution id: " + solutionId)
+    // }
 
     const fetchBestSolution = async (problemId) => {
         const sitesData = await getSiteData();
+        if (!sitesData || sitesData.statusCode !== 200) {
+            console.log("sites data not found")
+            return {}
+        }
+
         const problem = await getProblemById(problemId);
-        const siteData = sitesData.list.find((s) => s.id = problem.site_data_id)
+        if (!problem || problem.statusCode !== 200) {
+            console.log("problem not found")
+            return {}
+        }
+
         const solution = await getSolutionByProblemId(problemId);
-        return await convertToCalendarEvents(solution, siteData);
+        return await convertToCalendarEvents(solution);
     }
 
-    const convertToCalendarEvents = (solution, siteData) => {
+    const convertToCalendarEvents = async (solution) => {
         const calendarEvents = {}
 
         Object.entries(solution.data).forEach(([lineId, eventsPerLine]) => {
@@ -38,22 +88,65 @@ function Solutions(props) {
     }
 
     useEffect(() => {
-        (async () => {
-            const events = await fetchBestSolution(1);
-            setCalendarEvents(events[0]);
-        })()
+        const fetchSavedSolutions = async () => {
+            const solutions = await getSavedSolutions();
+            if (solutions && solutions.statusCode === 200) {
+                await Promise.all(solutions.list.map( async (solution) => {
+                    solution.solution = await convertToCalendarEvents(solution.solution)
+                }));
+                setSolutions(solutions.list);
+            } else {
+                setSolutions([]);
+            }
+        }
+
+        fetchSavedSolutions();
     }, []);
 
     return (
-        <>
-            <WeeklyCalendar
-                events={calendarEvents}
-                onEventClick={(event) => console.log(event)}
-                onSelectDate={(date) => console.log(date)}
-                weekends={true}
-            />
-        </>
+        <div className='solutions'>
+            <h1 id='saved-solutions-h1'>Saved Solutions</h1>
+            <hr />
+            <div className='tableContainer'>
+                <div style={{width: "700px", textAlign: '-webkit-center'}}>
+                    <Table
+                        rowKey={"id"}
+                        columns={savedSolutionsTableCols}
+                        dataSource={savedSolutions}
+                        expandable={{
+                            expandedRowRender: (solution) => (
+                                // <p
+                                //     style={{
+                                //         margin: 0,
+                                //     }}
+                                // >
+                                // </p>
+                                <WeeklyCalendar
+                                    events={solution.solution[0]}
+                                    onEventClick={(event) => console.log(event)}
+                                    onSelectDate={(date) => console.log(date)}
+                                    weekends={true}
+                                />
+                            ),
+                            rowExpandable: (record) => record.title !== 'Not Expandable',
+                        }}
+                    >
+                    </Table>
+                </div>
+            </div>
+        </div>
     );
+
+    // return (
+    //     <>
+    //         <WeeklyCalendar
+    //             events={calendarEvents}
+    //             onEventClick={(event) => console.log(event)}
+    //             onSelectDate={(date) => console.log(date)}
+    //             weekends={true}
+    //         />
+    //     </>
+    // );
 }
 
 export default Solutions;

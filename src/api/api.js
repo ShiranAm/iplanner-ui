@@ -118,3 +118,26 @@ export async function getProblemById(problemId) {
     const result = await baseRequest(url, 'GET', headers);
     return result;
 }
+
+export async function getSiteDataById(siteDataId) {
+    const url = `${baseUrl}/site-data`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const sitesData = await baseRequest(url, 'GET', headers);
+    const result = sitesData.list.find((s) => s.id = siteDataId)
+    return result;
+}
+
+export async function getSavedSolutions() {
+    const url = `${baseUrl}/favorite-solution`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
