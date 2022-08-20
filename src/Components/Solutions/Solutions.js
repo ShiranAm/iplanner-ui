@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions } from "../../api/api";
-import { Table } from "antd";
+import { Table, Modal } from "antd";
 import { CalendarOutlined } from '@ant-design/icons';
 // import {isNull} from "lodash";
 // import './SiteData.css'
@@ -11,6 +11,7 @@ function Solutions(props) {
 
     const [calendarEvents, setCalendarEvents] = useState(false);
     const [savedSolutions, setSolutions] = useState(false);
+    const [isEditEventModalVisible, setIsEditEventModalVisible] = useState(false);
 
     const savedSolutionsTableCols = [
         {
@@ -103,6 +104,29 @@ function Solutions(props) {
         fetchSavedSolutions();
     }, []);
 
+    const handleOkEventModal = () => {
+        // need to save the new data
+        setIsEditEventModalVisible(false);
+    }
+
+    const handleCancelEventModal = () => {
+        setIsEditEventModalVisible(false);
+    }
+
+    const getEditEventModal = (event) => {
+        setIsEditEventModalVisible(true);
+
+        return (
+            <Modal title="Edit Event" visible={isEditEventModalVisible} onOk={handleOkEventModal} onCancel={handleCancelEventModal}>
+                <p>test</p>
+            </Modal>
+        );
+    }
+
+    const handleEditEventClick = (event) => {
+        return getEditEventModal(event)
+    };
+
     return (
         <div className='solutions'>
             <h1 id='saved-solutions-h1'>Saved Solutions</h1>
@@ -121,14 +145,15 @@ function Solutions(props) {
                                 //     }}
                                 // >
                                 // </p>
-                                <WeeklyCalendar
-                                    events={solution.solution[0]}
-                                    onEventClick={(event) => console.log(event)}
-                                    onSelectDate={(date) => console.log(date)}
-                                    weekends={true}
-                                />
+                                <div>
+                                    <WeeklyCalendar
+                                        events={solution.solution[0]}
+                                        onEventClick={handleEditEventClick}
+                                        onSelectDate={(date) => console.log(date)}
+                                        weekends={true}
+                                    />
+                                </div>
                             ),
-                            rowExpandable: (record) => record.title !== 'Not Expandable',
                         }}
                     >
                     </Table>
