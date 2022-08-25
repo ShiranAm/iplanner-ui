@@ -141,3 +141,14 @@ export async function getSavedSolutions() {
     const result = await baseRequest(url, 'GET', headers);
     return result;
 }
+
+export async function getSolutionById(solutionId) {
+    const url = `${baseUrl}/favorite-solution/${solutionId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}

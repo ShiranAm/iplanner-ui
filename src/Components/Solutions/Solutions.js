@@ -1,17 +1,65 @@
 import React, {useEffect, useState} from "react";
-import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions } from "../../api/api";
-import { Table, Modal } from "antd";
-import { CalendarOutlined } from '@ant-design/icons';
+import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions, getSolutionById } from "../../api/api";
+import { Table, Modal, Menu, Dropdown, Space, Button, Select } from "antd";
+import { BarChartOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
 // import {isNull} from "lodash";
 // import './SiteData.css'
 import { WeeklyCalendar } from 'antd-weekly-calendar';
+const { Option } = Select;
 
 
 function Solutions(props) {
 
-    const [calendarEvents, setCalendarEvents] = useState(false);
-    const [savedSolutions, setSolutions] = useState(false);
+    const [calendarEvents, setCalendarEvents] = useState([]);
+    const [savedSolutions, setSolutions] = useState([]);
     const [isEditEventModalVisible, setIsEditEventModalVisible] = useState(false);
+    const [selectedProductionLine, setSelectedProductionLine] = useState(0);
+    const [solutionAnalyticsModalVisible, setSolutionAnalyticsModalVisible] = useState(false);
+    const [solutionAnalyticsModalTitle, setSolutionAnalyticsModalTitle] = useState(false);
+    const [solutionForecastData, setSolutionForecastData] = useState([]);
+    const [prodLineUtilData, setProdLineUtilData] = useState([]);
+    const [rawMaterialsUsageData, setRawMaterialsUsageData] = useState([]);
+    const [editEventCurrentProduct, setEditEventCurrentProduct] = useState("");
+
+    // TODO: get products mapping dynamically
+    const Products = {
+        "Bissli 100g": "0",
+        "Bissli 150g": "1",
+        "Bamba 50g": "2",
+        "Apropo 50g": "3",
+        "0": "Bissli 100g",
+        "1": "Bissli 150g",
+        "2": "Bamba 50g",
+        "3": "Apropo 50g"
+    };
+
+    const handleProductionLineDropDownClick = (e) => {
+        setSelectedProductionLine(e.key)
+    };
+
+    const productionLinesDropDownMenu = (
+        <Menu
+            onClick={handleProductionLineDropDownClick}
+            // TODO: need to make this list dynamic and not hard-coded.
+            items={[
+                {
+                    label: 'Production Line #0',
+                    key: '0',
+                    icon: <UserOutlined />,
+                },
+                {
+                    label: 'Production Line #1',
+                    key: '1',
+                    icon: <UserOutlined />,
+                },
+                {
+                    label: 'Production Line #2',
+                    key: '2',
+                    icon: <UserOutlined />,
+                },
+            ]}
+        />
+    );
 
     const savedSolutionsTableCols = [
         {
@@ -38,19 +86,69 @@ function Solutions(props) {
             key: 'fitness',
             width: "100%"
         },
-        // {
-        //     title: '',
-        //     key: 'action',
-        //     width: "20%",
-        //     render: (data) => (<Button onClick={() => handleShowSolution(data.id)}><CalendarOutlined /></Button>)
-        //
-        // }
+        {
+            title: 'Analytics',
+            key: 'analytics',
+            width: "20%",
+            render: (data) => (<Button onClick={() => handleShowSolutionAnalytics(data.id)}><BarChartOutlined /></Button>)
+
+        }
     ]
 
-    // const handleShowSolution = async (solutionId) => {
-    //
-    //     console.log("solution id: " + solutionId)
-    // }
+    const analyticsTableColumns = [
+        {
+            title: 'Key',
+            dataIndex: 'key',
+            key: 'key',
+            width: "10%"
+        },
+        {
+            title: 'Value',
+            dataIndex: 'value',
+            key: 'value',
+            width: "10%"
+        },
+    ]
+
+    const handleSolutionAnalyticsModalCancel = () => {
+        setSolutionAnalyticsModalVisible(false)
+    };
+
+    const fillSolutionForecastData = (solution) => {
+        let forecastsList = [];
+        for (let [productId, forecastAchieved] of Object.entries(solution.forecast_achieved)) {
+            forecastsList.push({'key': "Product #" + productId, 'value': forecastAchieved + " %"})
+        }
+        setSolutionForecastData(forecastsList)
+    }
+
+    const fillRawMaterialsUsageData = (solution) => {
+        let rawMaterialsList = [];
+        for (let [materialId, usage] of Object.entries(solution.raw_materials_usage)) {
+            rawMaterialsList.push({'key': "Material #" + materialId, 'value': usage + " %"})
+        }
+        setRawMaterialsUsageData(rawMaterialsList)
+    }
+
+    const fillProdLineUtilData = (solution) => {
+        let prodLinesUtilList = [];
+        for (let [prodLineId, utilPercentage] of Object.entries(solution.product_line_utilization)) {
+            prodLinesUtilList.push({'key': "Production Line #" + prodLineId, 'value': utilPercentage + " %"})
+        }
+        setProdLineUtilData(prodLinesUtilList)
+    }
+
+    const handleShowSolutionAnalytics = async (solutionId) => {
+        console.log("solution id: " + solutionId);
+        const solution = await getSolutionById(solutionId);
+        setSolutionAnalyticsModalTitle("Solution #" + solutionId + " Analytics");
+        if (solution.statusCode === 200) {
+            fillSolutionForecastData(solution);
+            fillRawMaterialsUsageData(solution);
+            fillProdLineUtilData(solution);
+            setSolutionAnalyticsModalVisible(true);
+        }
+    }
 
     const fetchBestSolution = async (problemId) => {
         const sitesData = await getSiteData();
@@ -113,53 +211,126 @@ function Solutions(props) {
         setIsEditEventModalVisible(false);
     }
 
-    const getEditEventModal = (event) => {
-        setIsEditEventModalVisible(true);
-
-        return (
-            <Modal title="Edit Event" visible={isEditEventModalVisible} onOk={handleOkEventModal} onCancel={handleCancelEventModal}>
-                <p>test</p>
-            </Modal>
-        );
-    }
-
     const handleEditEventClick = (event) => {
-        return getEditEventModal(event)
+        setIsEditEventModalVisible(true);
+        let productId = event.title.split(' ')[0].replace('#', '')
+        setEditEventCurrentProduct(Products[productId]);  // TODO: this is not working, why??
     };
 
+    const onEditEventProductChange = (e) => {
+        setEditEventCurrentProduct(Products[e]);
+    }
+
+    const onEditEventProductSearch = (e) => {
+        console.log(e);
+    }
+
+    // TODO: need to change edit event modal to form!
     return (
-        <div className='solutions'>
-            <h1 id='saved-solutions-h1'>Saved Solutions</h1>
-            <hr />
-            <div className='tableContainer'>
-                <div style={{width: "700px", textAlign: '-webkit-center'}}>
-                    <Table
-                        rowKey={"id"}
-                        columns={savedSolutionsTableCols}
-                        dataSource={savedSolutions}
-                        expandable={{
-                            expandedRowRender: (solution) => (
-                                // <p
-                                //     style={{
-                                //         margin: 0,
-                                //     }}
-                                // >
-                                // </p>
-                                <div>
-                                    <WeeklyCalendar
-                                        events={solution.solution[0]}
-                                        onEventClick={handleEditEventClick}
-                                        onSelectDate={(date) => console.log(date)}
-                                        weekends={true}
-                                    />
-                                </div>
-                            ),
-                        }}
+        <>
+            <Modal
+                title="Edit Event"
+                visible={isEditEventModalVisible}
+                onOk={handleOkEventModal}
+                onCancel={handleCancelEventModal}
+            >
+                <p>
+                    <Select
+                        showSearch
+                        placeholder={editEventCurrentProduct}
+                        optionFilterProp="children"
+                        onChange={onEditEventProductChange}
+                        onSearch={onEditEventProductSearch}
+                        filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
                     >
-                    </Table>
+                        <Option value="0">{Products["0"]}</Option>
+                        <Option value="1">{Products["1"]}</Option>
+                        <Option value="2">{Products["2"]}</Option>
+                        <Option value="3">{Products["3"]}</Option>
+                    </Select>
+                </p>
+            </Modal>
+            <Modal
+                visible={solutionAnalyticsModalVisible}
+                title={solutionAnalyticsModalTitle}
+                onCancel={handleSolutionAnalyticsModalCancel}
+                footer={[
+                    <Button key="back" onClick={handleSolutionAnalyticsModalCancel}>
+                        Return
+                    </Button>
+                ]}
+            >
+                <p>
+                    <h4><b>Forecast Achieved</b></h4>
+                    <br></br>
+                    <Table
+                        columns={analyticsTableColumns}
+                        dataSource={solutionForecastData}
+                        size="small"
+                        bordered={false}
+                        showHeader={false}
+                    />
+                </p>
+                <p>
+                    <h4><b>Production Line Utilization</b></h4>
+                    <br></br>
+                    <Table
+                        columns={analyticsTableColumns}
+                        dataSource={prodLineUtilData}
+                        size="small"
+                        bordered={false}
+                        showHeader={false}
+                    />
+                </p>
+                <p>
+                    <h4><b>Raw Materials Usage</b></h4>
+                    <br></br>
+                    <Table
+                        columns={analyticsTableColumns}
+                        dataSource={rawMaterialsUsageData}
+                        size="small"
+                        bordered={false}
+                        showHeader={false}
+                    />
+                </p>
+            </Modal>
+            <div className='solutions'>
+                <h1 id='saved-solutions-h1'>Saved Solutions</h1>
+                <hr />
+                <div className='tableContainer'>
+                    <div style={{width: "700px", textAlign: '-webkit-center'}}>
+                        <Table
+                            rowKey={"id"}
+                            columns={savedSolutionsTableCols}
+                            dataSource={savedSolutions}
+                            expandable={{
+                                expandedRowRender: (solution) => (
+                                    <div>
+                                        <Space wrap>
+                                            <Dropdown overlay={productionLinesDropDownMenu}>
+                                                <Button>
+                                                    <Space>
+                                                        Production Lines
+                                                        <DownOutlined />
+                                                    </Space>
+                                                </Button>
+                                            </Dropdown>
+                                        </Space>
+                                        <WeeklyCalendar
+                                            events={solution.solution[selectedProductionLine]}
+                                            onEventClick={handleEditEventClick}
+                                            onSelectDate={(date) => console.log(date)}
+                                            weekends={true}
+                                        />
+                                    </div>
+                                ),
+                            }}
+                        >
+                        </Table>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 
     // return (
