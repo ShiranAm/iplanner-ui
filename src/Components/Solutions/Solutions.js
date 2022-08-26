@@ -1,18 +1,20 @@
 import React, {useEffect, useState} from "react";
 import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions, getSolutionById } from "../../api/api";
-import { Table, Modal, Menu, Dropdown, Space, Button, Select } from "antd";
+import { Table, Modal, Menu, Dropdown, Space, Button, Select, Form, DatePicker } from "antd";
+import type { DatePickerProps, RangePickerProps } from 'antd/es/date-picker';
 import { BarChartOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
 // import {isNull} from "lodash";
 // import './SiteData.css'
 import { WeeklyCalendar } from 'antd-weekly-calendar';
+import moment from 'moment';
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 
 function Solutions(props) {
 
     const [calendarEvents, setCalendarEvents] = useState([]);
     const [savedSolutions, setSolutions] = useState([]);
-    const [isEditEventModalVisible, setIsEditEventModalVisible] = useState(false);
     const [selectedProductionLine, setSelectedProductionLine] = useState(0);
     const [solutionAnalyticsModalVisible, setSolutionAnalyticsModalVisible] = useState(false);
     const [solutionAnalyticsModalTitle, setSolutionAnalyticsModalTitle] = useState(false);
@@ -20,6 +22,11 @@ function Solutions(props) {
     const [prodLineUtilData, setProdLineUtilData] = useState([]);
     const [rawMaterialsUsageData, setRawMaterialsUsageData] = useState([]);
     const [editEventCurrentProduct, setEditEventCurrentProduct] = useState("");
+    const [editEventCurrentDateTime, setEditEventCurrentDateTime] = useState(["", ""]);
+    const [editEventModalVisible, setEditEventModalVisible] = useState(false);
+
+    const dateTimeFormat = 'DD-MM-YYYY HH:mm';
+
 
     // TODO: get products mapping dynamically
     const Products = {
@@ -202,19 +209,20 @@ function Solutions(props) {
         fetchSavedSolutions();
     }, []);
 
-    const handleOkEventModal = () => {
-        // need to save the new data
-        setIsEditEventModalVisible(false);
-    }
-
-    const handleCancelEventModal = () => {
-        setIsEditEventModalVisible(false);
-    }
-
     const handleEditEventClick = (event) => {
-        setIsEditEventModalVisible(true);
+
         let productId = event.title.split(' ')[0].replace('#', '')
-        setEditEventCurrentProduct(Products[productId]);  // TODO: this is not working, why??
+        setEditEventCurrentProduct(Products[productId]);
+        setEditEventCurrentDateTime([moment("22-09-2022 07:00", dateTimeFormat), moment("22-09-2022 08:00", dateTimeFormat)]);
+        setEditEventModalVisible(true);
+    };
+
+    const onEditEventModalOk = () => {
+        setEditEventModalVisible(false);
+    };
+
+    const onEditEventModalCancel = () => {
+        setEditEventModalVisible(false);
     };
 
     const onEditEventProductChange = (e) => {
@@ -225,30 +233,101 @@ function Solutions(props) {
         console.log(e);
     }
 
-    // TODO: need to change edit event modal to form!
+    const onEditEventRangePickerChange = (value, dateString) => {
+        console.log('Selected Time: ', value);
+        console.log('Formatted Selected Time: ', dateString);
+    };
+
+    const onEditEventRangePickerOk = (value) => {
+        console.log('onEditEventRangePickerOk: ', value);
+    };
+
+    const onEditEventFormFinish = (values) => {
+        // TODO: need to pass the values to backend
+        console.log('Success:', values);
+        setEditEventModalVisible(false);
+    };
+
+    const onEditEventFormFinishFailed = (errorInfo) => {
+        console.log('Failed:', errorInfo);
+    };
+
     return (
         <>
             <Modal
-                title="Edit Event"
-                visible={isEditEventModalVisible}
-                onOk={handleOkEventModal}
-                onCancel={handleCancelEventModal}
+                visible={editEventModalVisible}
+                onOk={onEditEventModalOk}
+                onCancel={onEditEventModalCancel}
+                destroyOnClose
             >
-                <p>
-                    <Select
-                        showSearch
-                        placeholder={editEventCurrentProduct}
-                        optionFilterProp="children"
-                        onChange={onEditEventProductChange}
-                        onSearch={onEditEventProductSearch}
-                        filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                <Form
+                    name="basic"
+                    labelCol={{
+                        span: 8,
+                    }}
+                    wrapperCol={{
+                        span: 16,
+                    }}
+                    initialValues={{}}
+                    onFinish={onEditEventFormFinish}
+                    onFinishFailed={onEditEventFormFinishFailed}
+                    autoComplete="off"
+                >
+                    <Form.Item
+                        label="Product"
+                        name="product"
+                        rules={[
+                            {
+                                required: true,
+                            },
+                        ]}
                     >
-                        <Option value="0">{Products["0"]}</Option>
-                        <Option value="1">{Products["1"]}</Option>
-                        <Option value="2">{Products["2"]}</Option>
-                        <Option value="3">{Products["3"]}</Option>
-                    </Select>
-                </p>
+                        <Select
+                            showSearch
+                            placeholder={editEventCurrentProduct}
+                            optionFilterProp="children"
+                            onChange={onEditEventProductChange}
+                            onSearch={onEditEventProductSearch}
+                            filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                        >
+                            <Option value="0">{Products["0"]}</Option>
+                            <Option value="1">{Products["1"]}</Option>
+                            <Option value="2">{Products["2"]}</Option>
+                            <Option value="3">{Products["3"]}</Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item
+                        label="Pick a new time"
+                        name="pickTime"
+                        rules={[
+                            {
+                                required: true,
+                            },
+                        ]}
+                    >
+                        <Space direction="vertical" size={12}>
+                            <RangePicker
+                                showTime={{
+                                    format: 'HH:mm',
+                                }}
+                                format={dateTimeFormat}
+                                onChange={onEditEventRangePickerChange}
+                                onOk={onEditEventRangePickerOk}
+                                value={editEventCurrentDateTime}
+                            />
+                        </Space>
+                    </Form.Item>
+                    <Form.Item
+                        wrapperCol={{
+                            offset: 8,
+                            span: 16,
+                        }}
+                    >
+                        <Button type="primary" htmlType="submit">
+                            Submit
+                        </Button>
+                    </Form.Item>
+                </Form>
             </Modal>
             <Modal
                 visible={solutionAnalyticsModalVisible}
@@ -332,138 +411,30 @@ function Solutions(props) {
             </div>
         </>
     );
-
-    // return (
-    //     <>
-    //         <WeeklyCalendar
-    //             events={calendarEvents}
-    //             onEventClick={(event) => console.log(event)}
-    //             onSelectDate={(date) => console.log(date)}
-    //             weekends={true}
-    //         />
-    //     </>
-    // );
 }
 
 export default Solutions;
-// function SiteData(props) {
-//     const [isUploading, setIsUploading] = useState(false);
-//     const [existingFiles, setExistingFiles] = useState([]);
-//     const [selectedFile, setSelectedFile] = useState(null);
-//     const [fileTitle, setFileTitle] = useState("");
-//
-//     const columns = [
-//         {
-//             title: 'Id',
-//             dataIndex: 'id',
-//             key: 'id',
-//             width: "30%"
-//         },
-//         {
-//             title: 'Title',
-//             dataIndex: 'title',
-//             key: 'title',
-//             width: "100%"
-//         },
-//         {
-//             title: 'Action',
-//             key: 'action',
-//             width: "20%",
-//             render: (data) => (<Button onClick={() => handleDeleteFile(data.id)}><DeleteFilled /></Button>)
-//
-//         }
-//     ]
-//
-//     useEffect(() => {
-//         const fetchData = async () => {
-//             const existingData = await getSiteData();
-//             if (existingData && existingData.statusCode === 200) {
-//                 setExistingFiles(existingData.list);
-//             } else {
-//                 setExistingFiles([]);
-//             }
-//         }
-//
-//         fetchData();
-//     }, []);
-//
-//     const onFileSelected = (event) => {
-//         setSelectedFile(event.target.files[0]);
-//     }
-//
-//     const onFileTitleChange = (e) => {
-//         setFileTitle(e.target.value);
-//     }
-//
-//     const handleDeleteFile = async (fileId) => {
-//         const response = await deleteFile(fileId);
-//         if (response && response.statusCode === 200) {
-//             setExistingFiles(response.list);
-//         }
-//     }
-//
-//     const onFileUpload = () => {
-//         // Create an object of formData
-//         if (selectedFile != null) {
-//             const formData = new FormData();
-//             formData.append('file', selectedFile, selectedFile.name);
-//             formData.append('title', fileTitle);
-//             setIsUploading(true);
-//             uploadFile(formData).then(async (response) => {
-//                 if (response && response.status === 200) {
-//                     setIsUploading(false);
-//                     const existingData = await getSiteData();
-//                     if (existingData && existingData.statusCode === 200) {
-//                         setExistingFiles(existingData.list);
-//                     }
-//                 }
-//             });
-//         }
-//     }
-//
-//     return (
-//         <div className='site-data'>
-//             <h1 id='site-data-h1'>Manage Site Data files</h1>
-//             <hr />
-//             <h2 className='site-sata-h2'>Upload Site Data json file</h2>
-//             <div className='upload-section'>
-//                 <Row gutter={[16, 16]} justify='center'>
-//                     <Col>
-//                         <label style={{paddingLeft: "80px"}} htmlFor='select-file-btn'>Select a file: </label>
-//                         <input type="file" id='select-file-btn' onChange={onFileSelected}/>
-//                     </Col>
-//                     <Col span={24}>
-//                         <Input
-//                             value={fileTitle}
-//                             onChange={onFileTitleChange}
-//                             placeholder='Title your file'
-//                             style={{width: "200px", marginLeft: "10px", marginRight: "10px"}}
-//                         >
-//
-//                         </Input>
-//                         <Button loading={isUploading}
-//                                 className='uploadBtn'
-//                                 onClick={onFileUpload}
-//                                 type="primary"
-//                                 disabled={isNull(selectedFile)}
-//                         >
-//                             Upload file
-//                         </Button>
-//                     </Col>
-//                 </Row>
-//             </div>
-//             <div className='tableContainer'>
-//                 <h2 className='site-sata-h2'>Existing files</h2>
-//                 <div style={{width: "700px", textAlign: '-webkit-center'}}>
-//                     <Table
-//                         columns={columns}
-//                         dataSource={existingFiles}
-//                     >
-//                     </Table>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// }
-//
-// export default SiteData;
+
+
+// <Modal
+//     title="Edit Event"
+//     visible={isEditEventModalVisible}
+//     onOk={handleOkEventModal}
+//     onCancel={handleCancelEventModal}
+// >
+//     <p>
+//         <Select
+//             showSearch
+//             placeholder=""
+//             optionFilterProp="children"
+//             onChange={onEditEventProductChange}
+//             onSearch={onEditEventProductSearch}
+//             filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+//         >
+//             <Option value="0">{Products["0"]}</Option>
+//             <Option value="1">{Products["1"]}</Option>
+//             <Option value="2">{Products["2"]}</Option>
+//             <Option value="3">{Products["3"]}</Option>
+//         </Select>
+//     </p>
+// </Modal>
