@@ -1,6 +1,12 @@
 import React, { useEffect, useState} from "react";
 import { Select, Button, Row, Col, Drawer, Input, Table, Badge, Tag } from 'antd';
-import { PlusOutlined, CaretRightOutlined, PauseOutlined, SettingFilled, DeleteFilled } from "@ant-design/icons";
+import { PlusOutlined,
+  CaretRightOutlined,
+  PauseOutlined,
+  SettingFilled,
+  DeleteFilled,
+  ScheduleFilled } from "@ant-design/icons";
+import { AiOutlineSolution } from "react-icons/ai";
 import { RiStopMiniFill } from "react-icons/ri";
 import { getSiteData,
   createProblem,
@@ -9,7 +15,12 @@ import { getSiteData,
   playProblem,
   stopProblem,
   pauseProblem,
-  resumeProblem } from "../../api/api";
+  resumeProblem,
+  setPopulationSize,
+  setTimeCondition,
+  setFitnessCondition,
+  setGenerationsCondition } from "../../api/api";
+import ProgressBars from "../ProgressBars/ProgressBars";
 import ProblemCollapse from "../ProblemCollapse/ProblemCollapse";
 
 import './Problems.css'
@@ -25,13 +36,14 @@ function Problems(props) {
   const [problemTitle, setProblemTitle] = useState("");
   const [selectedProblem, setSelectedProblem] = useState(null);
 
-  const showDrawer = () => {
+  const showDrawer = (selectedProblem) => {
     setVisible(true);
   };
 
-  const onClose = () => {
+  const onClose = async () => {
+    await fetchProblems();
     setVisible(false);
-    setSelectedFile(null);
+    setSelectedProblem(null);
   };
 
   const fetchSiteData = async () => {
@@ -132,7 +144,7 @@ function Problems(props) {
                >
                </Badge>
                <span>
-             {data.engine.stopping_conditions_configuration.TIME_STOPPING_CONDITION.bound}
+             {data.engine.stopping_conditions_configuration.TIME_STOPPING_CONDITION.bound / 60}
                </span>
              </>
            )
@@ -164,7 +176,7 @@ function Problems(props) {
    key: 'actions',
    width: '200',
    render: (row) => (
-     <div className='actionContainer' style={{dispaly: 'flex', justifyContent: 'space-between'}}>
+     <div className='actionContainer' style={{dispaly: 'flex', justifyContent: 'center'}}>
        {(row.status === 'idle' || row.status === 'paused') ? (<Button
          className='actionButton'
          onClick={row.status === 'idle'? () => handlePlayProblem(row.id) : () => handleResumeProblem(row.id)}
@@ -185,7 +197,7 @@ function Problems(props) {
        </Button>
        <Button
          className='actionButton'
-         onClick={() => handleEditProblem(row.id)}
+         onClick={() => handleEditProblem(row)}
        >
          <SettingFilled />
        </Button>
@@ -195,6 +207,11 @@ function Problems(props) {
          disabled={row.status === 'running'}
        >
          <DeleteFilled />
+       </Button>
+       <Button
+         className='actionButton'
+       >
+         <AiOutlineSolution />
        </Button>
      </div>
    )
@@ -266,74 +283,119 @@ function Problems(props) {
     setProblemTitle(e.target.value);
   }
 
+  const handleSetPopulationSize = (value) => {
+    const data = {'population_size': parseInt(value.population_size)};
+    setPopulationSize(selectedProblem.id, data);
+  }
 
-      return (
-          <div className='problems'>
-              <h1 id='problems-h1'>Manage Problems</h1>
-              <hr />
-              <h2 className='problems-h2'>Create a new problem</h2>
-            <div style={{paddingTop: '20px'}}>
-              <Row gutter={[18, 48]} justify='space-around'>
-                <Col span={8}></Col>
-                <Col span={3}>
-                  <Select
-                    placeholder='Select file by id'
-                    onChange={onSelectedFile}
-                    style={{width: "200px"}}
-                  >
-                    {existingFiles.map((f, i) => (
-                      <Option key={`file-option-${i}`} value={f.id}>{`File id: ${f.id}`}</Option>
-                    ))}
-                  </Select>
-                </Col>
-                <Col span={3}>
-                  <Input
-                    value={problemTitle}
-                    placeholder="Title your Problem"
-                    style={{marginLeft: "0px", width: "200px"}}
-                    onChange={onProblemTitleChange}
-                  >
-                  </Input>
-                </Col>
-                <Col span={3}>
-                  <Button
-                    type="primary"
-                    disabled={selectedFile === null}
-                    onClick={handleCreateProblem}
-                  >
-                    <PlusOutlined />
-                    Create a new Problem
-                  </Button>
-                </Col>
-                <Col span={7}></Col>
-              </Row>
-              <Row gutter={[0, 16]} justify='center'>
-                <Col span={24}>
-                  <h2 style={{paddingTop: '60px'}}>Existing problems</h2>
-                </Col>
-                <Col span={24}>
-                  <Table
-                    columns={columns}
-                    dataSource={existingProblems}
-                    style={{paddingLeft: '80px', paddingRight: '80px'}}
-                  >
-                  </Table>
-                </Col>
-              </Row>
-              <Drawer
-                title='Configure Evolutionary Engine'
-                placement='right'
-                onClose={onClose}
-                visible={visible}
-                width={600}
+  const handleSetTimeCond = (cond) => {
+    const data = {
+      'applied': cond.applied,
+      'bound': parseInt(cond.bound)
+    };
+
+    setTimeCondition(selectedProblem.id, data);
+  }
+
+  const handleSetFitnessCond = (cond) => {
+    const data = {
+      'applied': cond.applied,
+      'bound': parseInt(cond.bound)
+    };
+
+    setFitnessCondition(selectedProblem.id, data);
+  }
+
+  const handleSetGenerationsCond = (cond) => {
+    const data = {
+      'applied': cond.applied,
+      'bound': parseInt(cond.bound)
+    };
+
+    setGenerationsCondition(selectedProblem.id, data);
+  }
+
+  return (
+      <div className='problems'>
+          <h1 id='problems-h1'>Manage Problems</h1>
+          <hr />
+          <h2 className='problems-h2'>Create a new problem</h2>
+        <div style={{paddingTop: '20px'}}>
+          <Row gutter={[18, 48]} justify='space-around'>
+            <Col span={8}></Col>
+            <Col span={3}>
+              <Select
+                placeholder='Select file by id'
+                onChange={onSelectedFile}
+                style={{width: "200px"}}
               >
-                <ProblemCollapse>
+                {existingFiles.map((f, i) => (
+                  <Option key={`file-option-${i}`} value={f.id}>{`File id: ${f.id}`}</Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={3}>
+              <Input
+                value={problemTitle}
+                placeholder="Title your Problem"
+                style={{marginLeft: "0px", width: "200px"}}
+                onChange={onProblemTitleChange}
+              >
+              </Input>
+            </Col>
+            <Col span={3}>
+              <Button
+                type="primary"
+                disabled={selectedFile === null}
+                onClick={handleCreateProblem}
+              >
+                <PlusOutlined />
+                Create a new Problem
+              </Button>
+            </Col>
+            <Col span={7}></Col>
+          </Row>
+          <Row gutter={[0, 16]} justify='center'>
+            <Col span={24}>
+              <h2 style={{paddingTop: '60px'}}>Existing problems</h2>
+            </Col>
+            <Col span={24}>
+              <Table
+                columns={columns}
+                dataSource={existingProblems}
+                style={{paddingLeft: '80px', paddingRight: '80px'}}
+                expandable={{
+                  expandedRowRender: (row) => (
+                    <ProgressBars problemId={row.id} />
 
-                </ProblemCollapse>
-              </Drawer>
-          </div>
-          </div>
-      )
+                  ),
+                  rowExpandable : (row) => row.status !== 'idle'
+                }}
+              >
+              </Table>
+            </Col>
+          </Row>
+          <Drawer
+            title='Configure Evolutionary Engine'
+            placement='right'
+            onClose={onClose}
+            visible={visible}
+            width={600}
+          >
+            <ProblemCollapse
+              onSetPopulationSize={handleSetPopulationSize}
+              populationSize={selectedProblem?.engine?.population_size}
+              stoppingConditionCondiguration={selectedProblem?.engine?.stopping_conditions_configuration}
+              setTimeCond={handleSetTimeCond}
+              setFitnessCond={handleSetFitnessCond}
+              setGenerationsCond={handleSetGenerationsCond}
+            >
+
+            </ProblemCollapse>
+          </Drawer>
+      </div>
+      </div>
+  )
 
 }
 
