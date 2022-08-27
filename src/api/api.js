@@ -152,3 +152,25 @@ export async function getSolutionById(solutionId) {
     const result = await baseRequest(url, 'GET', headers);
     return result;
 }
+
+export async function editSolution(solutionId, productionLine, key, newProduct, newDateTime) {
+    const url = `${baseUrl}/favorite-solution/${solutionId}`;
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const data = {
+        "production_line": productionLine,
+        "key": key,
+        "new_product": newProduct,
+        "new_datetime": [
+            newDateTime[0],
+            newDateTime[1]
+        ]
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}

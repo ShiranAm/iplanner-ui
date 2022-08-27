@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions, getSolutionById } from "../../api/api";
+import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions, getSolutionById, editSolution } from "../../api/api";
 import { Table, Modal, Menu, Dropdown, Space, Button, Select, Form, DatePicker } from "antd";
 import type { DatePickerProps, RangePickerProps } from 'antd/es/date-picker';
 import { BarChartOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
@@ -23,7 +23,12 @@ function Solutions(props) {
     const [rawMaterialsUsageData, setRawMaterialsUsageData] = useState([]);
     const [editEventCurrentProduct, setEditEventCurrentProduct] = useState("");
     const [editEventCurrentDateTime, setEditEventCurrentDateTime] = useState(["", ""]);
+    const [editEventDefaultDateTime, setEditEventDefaultDateTime] = useState(["", ""]);
     const [editEventModalVisible, setEditEventModalVisible] = useState(false);
+    const [currentSelectedEvent, setCurrentSelectedEvent] = useState({"productionLine": 0, "key": 0})
+    const [currentFocusedSolution, setCurrentFocusedSolution] = useState(false);
+    // let currentSelectedEvent = {"productionLine": 0, "key": 0};
+
 
     const dateTimeFormat = 'DD-MM-YYYY HH:mm';
 
@@ -39,6 +44,10 @@ function Solutions(props) {
         "2": "Bamba 50g",
         "3": "Apropo 50g"
     };
+
+    // const setCurrentSelectedEvent = (selectedEvent) => {
+    //     currentSelectedEvent = selectedEvent;
+    // }
 
     const handleProductionLineDropDownClick = (e) => {
         setSelectedProductionLine(e.key)
@@ -178,11 +187,12 @@ function Solutions(props) {
         const calendarEvents = {}
 
         Object.entries(solution.data).forEach(([lineId, eventsPerLine]) => {
-                const newEvents = eventsPerLine.map((item) => {
+                const newEvents = eventsPerLine.map((item, index) => {
                     let startTime = new Date(item['start_time'].replace(' ', 'T'))
                     let endTime = new Date(item['end_time'].replace(' ', 'T'))
                     let title = '#' + item['product_id'] + ' - ' + item['product_name']
-                    let newEvent = { startTime: startTime, endTime: endTime, title: title }
+                    let newEvent = { productionLine: item.production_line, key: item.key, startTime: startTime,
+                        endTime: endTime, title: title }
                     return newEvent
                 })
 
@@ -210,10 +220,20 @@ function Solutions(props) {
     }, []);
 
     const handleEditEventClick = (event) => {
+        console.log('event: ' + event)
+        setCurrentSelectedEvent({"productionLine": event.productionLine, "key": event.key});
+        console.log("selected event in handleEditEventClick: " + JSON.stringify(currentSelectedEvent));
 
         let productId = event.title.split(' ')[0].replace('#', '')
         setEditEventCurrentProduct(Products[productId]);
-        setEditEventCurrentDateTime([moment("22-09-2022 07:00", dateTimeFormat), moment("22-09-2022 08:00", dateTimeFormat)]);
+
+        let startTime = moment(new Date(event.startTime).toISOString(), dateTimeFormat)
+        let endTime = moment(new Date(event.endTime).toISOString(), dateTimeFormat)
+        let startTimeIsrael = startTime.add(3, 'hours')
+        let endTimeIsrael = endTime.add(3, 'hours')
+
+        console.log(moment(startTime, dateTimeFormat))
+        setEditEventDefaultDateTime([startTimeIsrael, endTimeIsrael]);
         setEditEventModalVisible(true);
     };
 
@@ -234,17 +254,39 @@ function Solutions(props) {
     }
 
     const onEditEventRangePickerChange = (value, dateString) => {
-        console.log('Selected Time: ', value);
-        console.log('Formatted Selected Time: ', dateString);
+        console.log('Old Time: ', value);
+        console.log('New Time: ', dateString);
+        setEditEventCurrentDateTime([moment(dateString[0], dateTimeFormat), moment(dateString[1], dateTimeFormat)]);
     };
 
     const onEditEventRangePickerOk = (value) => {
         console.log('onEditEventRangePickerOk: ', value);
+        // setEditEventCurrentDateTime([moment(value[0], dateTimeFormat), moment(value[1], dateTimeFormat)]);
     };
 
-    const onEditEventFormFinish = (values) => {
-        // TODO: need to pass the values to backend
+    const onEditEventFormFinish = async (values) => {
+        let solutionId = currentFocusedSolution
+        let productionLine = currentSelectedEvent.productionLine
+        let key = currentSelectedEvent.key
+
+        let newProduct = values.product
+        let newStartTime = values.pick_time[0].format('YYYY-DD-MM HH:mm')
+        let newEndTime = values.pick_time[1].format('YYYY-DD-MM HH:mm')
+        let newDateTime = [newStartTime, newEndTime]
+
+        //send to backend
+        // (solution id, production line, key) => this is where the change should occur
+        // newProduct => set the product (id)
+        // newDateTime => set the datetime (str)
+        // call put method with body containing the above ^
+        // in backend: fetch solution -> search line+key
+
         console.log('Success:', values);
+
+        const result = await editSolution(solutionId, productionLine, key, parseInt(newProduct), newDateTime);
+        if (result.statusCode === 200) {
+            console.log("successfully updated solution " + solutionId);
+        }
         setEditEventModalVisible(false);
     };
 
@@ -261,6 +303,7 @@ function Solutions(props) {
                 destroyOnClose
             >
                 <Form
+                    style={{marginRight: '50px', marginTop: '20px'}}
                     name="basic"
                     labelCol={{
                         span: 8,
@@ -298,24 +341,22 @@ function Solutions(props) {
                     </Form.Item>
                     <Form.Item
                         label="Pick a new time"
-                        name="pickTime"
-                        rules={[
-                            {
-                                required: true,
+                        name="pick_time"
+                        rules={[{
+                            required: true,
                             },
                         ]}
                     >
-                        <Space direction="vertical" size={12}>
-                            <RangePicker
-                                showTime={{
-                                    format: 'HH:mm',
-                                }}
-                                format={dateTimeFormat}
-                                onChange={onEditEventRangePickerChange}
-                                onOk={onEditEventRangePickerOk}
-                                value={editEventCurrentDateTime}
-                            />
-                        </Space>
+                        <RangePicker
+                            showTime={{
+                                format: 'HH:mm',
+                            }}
+                            format={dateTimeFormat}
+                            onChange={onEditEventRangePickerChange}
+                            onOk={onEditEventRangePickerOk}
+                            value={editEventCurrentDateTime}
+                            // defaultValue={editEventDefaultDateTime} for some reason default value is passed to form!!
+                        />
                     </Form.Item>
                     <Form.Item
                         wrapperCol={{
@@ -377,32 +418,35 @@ function Solutions(props) {
                 <h1 id='saved-solutions-h1'>Saved Solutions</h1>
                 <hr />
                 <div className='tableContainer'>
-                    <div style={{width: "700px", textAlign: '-webkit-center'}}>
+                    <div style={{width: "1000px", textAlign: '-webkit-center', marginTop: '20px'}}>
                         <Table
                             rowKey={"id"}
                             columns={savedSolutionsTableCols}
                             dataSource={savedSolutions}
                             expandable={{
-                                expandedRowRender: (solution) => (
-                                    <div>
-                                        <Space wrap>
-                                            <Dropdown overlay={productionLinesDropDownMenu}>
-                                                <Button>
-                                                    <Space>
-                                                        Production Lines
-                                                        <DownOutlined />
-                                                    </Space>
-                                                </Button>
-                                            </Dropdown>
-                                        </Space>
-                                        <WeeklyCalendar
-                                            events={solution.solution[selectedProductionLine]}
-                                            onEventClick={handleEditEventClick}
-                                            onSelectDate={(date) => console.log(date)}
-                                            weekends={true}
-                                        />
-                                    </div>
-                                ),
+                                expandedRowRender: (solution) => {
+                                    setCurrentFocusedSolution(solution.id)
+                                    return(
+                                        <div>
+                                            <Space wrap>
+                                                <Dropdown overlay={productionLinesDropDownMenu}>
+                                                    <Button>
+                                                        <Space>
+                                                            Production Lines
+                                                            <DownOutlined />
+                                                        </Space>
+                                                    </Button>
+                                                </Dropdown>
+                                            </Space>
+                                            <WeeklyCalendar
+                                                events={solution.solution[selectedProductionLine]}
+                                                onEventClick={handleEditEventClick}
+                                                onSelectDate={(date) => console.log(date)}
+                                                weekends={true}
+                                            />
+                                        </div>
+                                    )
+                                },
                             }}
                         >
                         </Table>
