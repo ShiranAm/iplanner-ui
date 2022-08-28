@@ -87,7 +87,6 @@ export async function createProblem(fileId, title) {
         'title': title
     }
 
-    console.log(data)
     const headers = {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': "*"
@@ -172,5 +171,125 @@ export async function editSolution(solutionId, productionLine, key, newProduct, 
     };
 
     const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
+export async function getAllProblems() {
+    const url = `${baseUrl}/problem`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function deleteProblem(problemId) {
+    const url = `${baseUrl}/problems/${problemId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'DELETE', headers);
+    return result;
+}
+
+export async function playProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/play`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
+    return result;
+}
+
+export async function pauseProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/pause`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
+    return result;
+}
+
+export async function resumeProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/resume`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
+    return result;
+}
+
+export async function stopProblem(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/stop`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers);
+    return result;
+}
+
+export async function setPopulationSize(problemId, data) {
+    const url = `${baseUrl}/problem/${problemId}/population`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
+
+export async function setTimeCondition(problemId, data) {
+    const url = `${baseUrl}/problem/${problemId}/stopping-condition/time`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
+
+export async function setFitnessCondition(problemId, data) {
+    const url = `${baseUrl}/problem/${problemId}/stopping-condition/fitness`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
+
+export async function setGenerationsCondition(problemId, data) {
+    const url = `${baseUrl}/problem/${problemId}/stopping-condition/generations`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
+
+export async function getProgress(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/progress`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
     return result;
 }
