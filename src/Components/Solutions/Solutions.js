@@ -3,12 +3,13 @@ import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions,
 import { Table, Modal, Menu, Dropdown, Space, Button, Select, Form, DatePicker } from "antd";
 import type { DatePickerProps, RangePickerProps } from 'antd/es/date-picker';
 import { BarChartOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
-// import {isNull} from "lodash";
-// import './SiteData.css'
+import $ from 'jquery';
 import { WeeklyCalendar } from 'antd-weekly-calendar';
 import moment from 'moment';
+import './Solutions.css'
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+
 
 
 function Solutions(props) {
@@ -44,10 +45,6 @@ function Solutions(props) {
         "2": "Bamba 50g",
         "3": "Apropo 50g"
     };
-
-    // const setCurrentSelectedEvent = (selectedEvent) => {
-    //     currentSelectedEvent = selectedEvent;
-    // }
 
     const handleProductionLineDropDownClick = (e) => {
         setSelectedProductionLine(e.key)
@@ -203,26 +200,31 @@ function Solutions(props) {
         return calendarEvents
     }
 
-    useEffect(() => {
-        const fetchSavedSolutions = async () => {
-            const solutions = await getSavedSolutions();
-            if (solutions && solutions.statusCode === 200) {
-                await Promise.all(solutions.list.map( async (solution) => {
-                    solution.solution = await convertToCalendarEvents(solution.solution)
-                }));
-                setSolutions(solutions.list);
-            } else {
-                setSolutions([]);
-            }
+    const fetchSavedSolutions = async () => {
+        const solutions = await getSavedSolutions();
+        if (solutions && solutions.statusCode === 200) {
+            await Promise.all(solutions.list.map( async (solution) => {
+                solution.solution = await convertToCalendarEvents(solution.solution)
+            }));
+            setSolutions(solutions.list);
+        } else {
+            setSolutions([]);
         }
+    }
 
+    const fixBadCalendarStyles = () => {
+        $('div[style*="top: 16800%"]').css('top', '0%');
+    };
+
+    useEffect(() => {
         fetchSavedSolutions();
+        fixBadCalendarStyles();
     }, []);
 
     const handleEditEventClick = (event) => {
-        console.log('event: ' + event)
+        console.log('selected production line: ' + event.productionLine + ', key: ' + event.key)
+
         setCurrentSelectedEvent({"productionLine": event.productionLine, "key": event.key});
-        console.log("selected event in handleEditEventClick: " + JSON.stringify(currentSelectedEvent));
 
         let productId = event.title.split(' ')[0].replace('#', '')
         setEditEventCurrentProduct(Products[productId]);
@@ -232,7 +234,6 @@ function Solutions(props) {
         let startTimeIsrael = startTime.add(3, 'hours')
         let endTimeIsrael = endTime.add(3, 'hours')
 
-        console.log(moment(startTime, dateTimeFormat))
         setEditEventDefaultDateTime([startTimeIsrael, endTimeIsrael]);
         setEditEventModalVisible(true);
     };
@@ -270,22 +271,15 @@ function Solutions(props) {
         let key = currentSelectedEvent.key
 
         let newProduct = values.product
-        let newStartTime = values.pick_time[0].format('YYYY-DD-MM HH:mm')
-        let newEndTime = values.pick_time[1].format('YYYY-DD-MM HH:mm')
+        let newStartTime = values.pick_time[0].format('YYYY-MM-DD HH:mm')
+        let newEndTime = values.pick_time[1].format('YYYY-MM-DD HH:mm')
         let newDateTime = [newStartTime, newEndTime]
-
-        //send to backend
-        // (solution id, production line, key) => this is where the change should occur
-        // newProduct => set the product (id)
-        // newDateTime => set the datetime (str)
-        // call put method with body containing the above ^
-        // in backend: fetch solution -> search line+key
-
-        console.log('Success:', values);
 
         const result = await editSolution(solutionId, productionLine, key, parseInt(newProduct), newDateTime);
         if (result.statusCode === 200) {
             console.log("successfully updated solution " + solutionId);
+            console.log(result);
+            fetchSavedSolutions();
         }
         setEditEventModalVisible(false);
     };
@@ -418,7 +412,7 @@ function Solutions(props) {
                 <h1 id='saved-solutions-h1'>Saved Solutions</h1>
                 <hr />
                 <div className='tableContainer'>
-                    <div style={{width: "1000px", textAlign: '-webkit-center', marginTop: '20px'}}>
+                    <div style={{width: "1300px", textAlign: '-webkit-center', marginTop: '20px'}}>
                         <Table
                             rowKey={"id"}
                             columns={savedSolutionsTableCols}
@@ -439,9 +433,10 @@ function Solutions(props) {
                                                 </Dropdown>
                                             </Space>
                                             <WeeklyCalendar
+                                                id="weeklyCalendar"
                                                 events={solution.solution[selectedProductionLine]}
                                                 onEventClick={handleEditEventClick}
-                                                onSelectDate={(date) => console.log(date)}
+                                                onSelectDate={fixBadCalendarStyles}
                                                 weekends={true}
                                             />
                                         </div>
@@ -458,27 +453,3 @@ function Solutions(props) {
 }
 
 export default Solutions;
-
-
-// <Modal
-//     title="Edit Event"
-//     visible={isEditEventModalVisible}
-//     onOk={handleOkEventModal}
-//     onCancel={handleCancelEventModal}
-// >
-//     <p>
-//         <Select
-//             showSearch
-//             placeholder=""
-//             optionFilterProp="children"
-//             onChange={onEditEventProductChange}
-//             onSearch={onEditEventProductSearch}
-//             filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
-//         >
-//             <Option value="0">{Products["0"]}</Option>
-//             <Option value="1">{Products["1"]}</Option>
-//             <Option value="2">{Products["2"]}</Option>
-//             <Option value="3">{Products["3"]}</Option>
-//         </Select>
-//     </p>
-// </Modal>
