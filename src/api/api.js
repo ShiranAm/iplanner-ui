@@ -96,6 +96,83 @@ export async function createProblem(fileId, title) {
     return result;
 }
 
+export async function getSolutionByProblemId(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/solution`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function getProblemById(problemId) {
+    const url = `${baseUrl}/problems/${problemId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function getSiteDataById(siteDataId) {
+    const url = `${baseUrl}/site-data`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const sitesData = await baseRequest(url, 'GET', headers);
+    const result = sitesData.list.find((s) => s.id = siteDataId)
+    return result;
+}
+
+export async function getSavedSolutions() {
+    const url = `${baseUrl}/favorite-solution`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function getSolutionById(solutionId) {
+    const url = `${baseUrl}/favorite-solution/${solutionId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function editSolution(solutionId, productionLine, key, newProduct, newDateTime) {
+    const url = `${baseUrl}/favorite-solution/${solutionId}`;
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const data = {
+        "production_line": productionLine,
+        "key": key,
+        "new_product": newProduct,
+        "new_datetime": [
+            newDateTime[0],
+            newDateTime[1]
+        ]
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
 export async function getAllProblems() {
     const url = `${baseUrl}/problem`;
     const headers = {
