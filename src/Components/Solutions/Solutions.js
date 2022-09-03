@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
 import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions, getSolutionById, editSolution } from "../../api/api";
 import { Table, Modal, Menu, Dropdown, Space, Button, Select, Form, DatePicker } from "antd";
-import type { DatePickerProps, RangePickerProps } from 'antd/es/date-picker';
 import { BarChartOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
 import $ from 'jquery';
 import { WeeklyCalendar } from 'antd-weekly-calendar';
@@ -14,7 +13,6 @@ const { RangePicker } = DatePicker;
 
 function Solutions(props) {
 
-    const [calendarEvents, setCalendarEvents] = useState([]);
     const [savedSolutions, setSolutions] = useState([]);
     const [selectedProductionLine, setSelectedProductionLine] = useState(0);
     const [solutionAnalyticsModalVisible, setSolutionAnalyticsModalVisible] = useState(false);
@@ -28,8 +26,6 @@ function Solutions(props) {
     const [editEventModalVisible, setEditEventModalVisible] = useState(false);
     const [currentSelectedEvent, setCurrentSelectedEvent] = useState({"productionLine": 0, "key": 0})
     const [currentFocusedSolution, setCurrentFocusedSolution] = useState(false);
-    // let currentSelectedEvent = {"productionLine": 0, "key": 0};
-
 
     const dateTimeFormat = 'DD-MM-YYYY HH:mm';
 
