@@ -11,7 +11,7 @@ function ProgressBars(props) {
   const [generationsAplied, setGenerationsApplied] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(fetchProgress, 5000);
+    const interval = setInterval(fetchProgress, 1000);
     return () => clearInterval(interval);
   }, [])
 

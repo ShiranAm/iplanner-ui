@@ -7,9 +7,11 @@ const { Option } = Select;
 function ProblemCollapse(props) {
   const [populationSize, setPopulationSize] = useState(null);
   const [selectedSelection, setSelection] = useState(null);
+  const [selectedCrossover, setSelectedCrossover] = useState(null)
+  const [selectedMutation, setSelectedMutation] = useState(null);
 
   const [timeCondEnabled, setTimeCondEnabled] = useState(null);
-  const [fitnessCondEnabled, setFitenssCondEnabled] = useState(null);
+  const [fitnessCondEnabled, setFitnessCondEnabled] = useState(null);
   const [generationCondEnabled, setGenerationCondEnabled] = useState(null);
 
   const [timeBound, setTimeBound] = useState(null);
@@ -19,33 +21,35 @@ function ProblemCollapse(props) {
   useEffect(() => {
     setPopulationSize(props.populationSize)
 
-    setTimeCondEnabled(props.stoppingConditionCondiguration.TIME_STOPPING_CONDITION.applied);
-    setFitenssCondEnabled(props.stoppingConditionCondiguration.FITNESS_STOPPING_CONDITION.applied);
-    setGenerationCondEnabled(props.stoppingConditionCondiguration.GENERATIONS_STOPPING_CONDITION.applied);
+    setTimeCondEnabled(props.stoppingConditionCondiguration?.TIME_STOPPING_CONDITION.applied);
+    setFitnessCondEnabled(props.stoppingConditionCondiguration?.FITNESS_STOPPING_CONDITION.applied);
+    setGenerationCondEnabled(props.stoppingConditionCondiguration?.GENERATIONS_STOPPING_CONDITION.applied);
 
-    setTimeBound(props.stoppingConditionCondiguration.TIME_STOPPING_CONDITION.bound);
-    setFitnessBound(props.stoppingConditionCondiguration.FITNESS_STOPPING_CONDITION.bound);
-    setGenerationsBound(props.stoppingConditionCondiguration.GENERATIONS_STOPPING_CONDITION.bound);
+    setTimeBound(props.stoppingConditionCondiguration?.TIME_STOPPING_CONDITION.bound);
+    setFitnessBound(props.stoppingConditionCondiguration?.FITNESS_STOPPING_CONDITION.bound);
+    setGenerationsBound(props.stoppingConditionCondiguration?.GENERATIONS_STOPPING_CONDITION.bound);
 
   }, [])
 
   const mutationsMapping = {
     0: 'Flip Bit',
+    1: 'Shuffle Indexes'
   }
 
   const crossoverMapping = {
     0: 'Two-Point Crossover',
+    1: 'One-Point Crossover'
   }
 
   const selectionMapping = {
-    0: 'Tournament'
+    0: 'Tournament',
+    1: 'Roulette'
   }
 
-  const selectionInputMaping = {
+  const selectionInputMapping = {
     0:
     (<>
       <Form.Item
-        name='selection_parameters'
       >
         <Form.Item
           label='Tournsize'
@@ -53,14 +57,9 @@ function ProblemCollapse(props) {
         >
           <Input></Input>
         </Form.Item>
-        <Form.Item
-          label='k'
-          name='k'
-        >
-          <Input></Input>
-        </Form.Item>
       </Form.Item>
-    </>)
+    </>),
+    1: (null)
   }
 
   const getStoppingConditionsForms = () => (
@@ -200,16 +199,18 @@ function ProblemCollapse(props) {
     </>
     )
 
-  const handlePopulationSizeChange = (value) => {
-    setPopulationSize(value);
-  }
-
   const handleSelectionChange = (value) => {
     setSelection(value);
   }
 
   const handleSetSelectionMethod = (values) => {
-    console.log(values)
+    const data = {};
+    Object.keys(values).forEach((k) => {
+      values[k] = parseInt(values[k]);
+    })
+    data.selection_parameters = values;
+    data.selection_id = parseInt(selectedSelection);
+    props.setSelectionMethod(data);
   }
 
   const setTimeCondition = (values) => {
@@ -218,6 +219,32 @@ function ProblemCollapse(props) {
 
   const setGenerationsCond = (values) => {
     props.setGenerationsCond(values);
+  }
+
+  const handleCrossoverChange = (value) => {
+    setSelectedCrossover(value)
+  }
+
+  const handleSetCrossover = () => {
+    const data = {
+      'crossover_id': parseInt(selectedCrossover),
+      'crossover_parameters': {}
+    };
+
+    props.setCrossoverMethod(data);
+  }
+
+  const handleMutationChange = (value) =>{
+    setSelectedMutation(value)
+  }
+
+  const handleSetMutation = () => {
+    const data = {
+      'mutation_id': parseInt(selectedMutation),
+      'mutation_parameters': {}
+    };
+
+    props.setMutationMethod(data);
   }
 
   return (
@@ -257,14 +284,13 @@ function ProblemCollapse(props) {
             </Row>
           </Form>
         </Panel>
-        <Panel header="Set Selction Method">
+        <Panel header="Set Selection Method">
           <Row justify='space-between'>
             <Col>
               <Form
                 onFinish={handleSetSelectionMethod}
               >
                 <Form.Item
-                  name='selection_id'
                 >
                   <Select
                     placeholder='Select'
@@ -275,7 +301,7 @@ function ProblemCollapse(props) {
                       <Option key={`selection-method-${i}`} value={key}>{value}</Option>
                     ))}
                   </Select>
-                  {selectedSelection && selectionInputMaping[selectedSelection]}
+                  {selectedSelection && selectionInputMapping[selectedSelection]}
                   {selectedSelection &&
                     <Form.Item>
                     <Button
@@ -299,6 +325,7 @@ function ProblemCollapse(props) {
               <Select
                 placeholder='Select'
                 style={{width: '200px'}}
+                onChange={handleCrossoverChange}
               >
                 {Object.entries(crossoverMapping).map(([key, value], i) => (
                   <Option key={`crossover-method-${i}`} value={key}>{value}</Option>
@@ -308,6 +335,7 @@ function ProblemCollapse(props) {
             <Col>
               <Button
                 type='primary'
+                onClick={handleSetCrossover}
               >
                 Set
               </Button>
@@ -320,6 +348,7 @@ function ProblemCollapse(props) {
               <Select
                 placeholder='Select'
                 style={{width: '200px'}}
+                onChange={handleMutationChange}
               >
                 {Object.entries(mutationsMapping).map(([key, value], i) => (
                   <Option key={`mutation-method-${i}`} value={key}>{value}</Option>
@@ -329,6 +358,7 @@ function ProblemCollapse(props) {
             <Col>
               <Button
                 type='primary'
+                onClick={handleSetMutation}
               >
                 Set
               </Button>

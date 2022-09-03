@@ -1,11 +1,10 @@
 import React, { useEffect, useState} from "react";
-import { Select, Button, Row, Col, Drawer, Input, Table, Badge, Tag } from 'antd';
+import { Select, Button, Row, Col, Drawer, Input, Table, Badge, Tag, Spin, message } from 'antd';
 import { PlusOutlined,
   CaretRightOutlined,
   PauseOutlined,
   SettingFilled,
-  DeleteFilled,
-  ScheduleFilled } from "@ant-design/icons";
+  DeleteFilled } from "@ant-design/icons";
 import { AiOutlineSolution } from "react-icons/ai";
 import { RiStopMiniFill } from "react-icons/ri";
 import { getSiteData,
@@ -19,7 +18,11 @@ import { getSiteData,
   setPopulationSize,
   setTimeCondition,
   setFitnessCondition,
-  setGenerationsCondition } from "../../api/api";
+  setGenerationsCondition,
+  getCurrentBestSolution,
+  setSelectionMethod,
+  setCrossoverMethod,
+  setMutationMethod} from "../../api/api";
 import ProgressBars from "../ProgressBars/ProgressBars";
 import ProblemCollapse from "../ProblemCollapse/ProblemCollapse";
 
@@ -31,20 +34,41 @@ const { Option } = Select;
 function Problems(props) {
   const [existingFiles, setExistingFiles] = useState([]);
   const [existingProblems, setExistingProblems] = useState([]);
-  const [visible, setVisible] = useState(false);
+  const [configurationDrawerVisible, setConfigurationDrawerVisible] = useState(false);
+  const [solutionVisible, setSolutionVisible] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [problemTitle, setProblemTitle] = useState("");
   const [selectedProblem, setSelectedProblem] = useState(null);
+  const [loadingSolution, setLoadingSolution] = useState(false);
+  const [events, setEvents] = useState(false);
 
-  const showDrawer = (selectedProblem) => {
-    setVisible(true);
+  const showConfigurationDrawer = () => {
+    setConfigurationDrawerVisible(true);
   };
 
-  const onClose = async () => {
+  const showSolutionDrawer = async (problem) => {
+    setSelectedProblem(problem);
+    setSolutionVisible(true);
+    setLoadingSolution(true);
+    const result = await getCurrentBestSolution(problem.id);
+    console.log(result)
+    if (result && result.statusCode === 200) {
+
+    }
+    setLoadingSolution(false);
+
+  }
+
+  const onCloseConfigurationDrawer = async () => {
     await fetchProblems();
-    setVisible(false);
+    setConfigurationDrawerVisible(false);
     setSelectedProblem(null);
   };
+
+  const onCloseSolutionDrawer = () => {
+    setSolutionVisible(false);
+    setSelectedProblem(null);
+  }
 
   const fetchSiteData = async () => {
     const existingData = await getSiteData();
@@ -70,15 +94,18 @@ function Problems(props) {
   }, []);
 
   const selectionMapping = {
-    0: 'Tournament'
+    0: 'Tournament',
+    1: 'Roulette'
   }
 
   const crossoverMapping = {
-    0: 'Two Point'
+    0: 'Two Point',
+    1: 'One Point'
   }
 
   const MutationMapping = {
-    0: 'Flip Bit'
+    0: 'Flip Bit',
+    1: 'Shuffle Indexes'
   }
 
  const columns = [{
@@ -192,12 +219,14 @@ function Problems(props) {
        <Button
          className='actionButton'
          onClick={() => handleStopProblem(row.id)}
+         disabled={row.status !== 'paused'}
        >
         <RiStopMiniFill/>
        </Button>
        <Button
          className='actionButton'
          onClick={() => handleEditProblem(row)}
+         disabled={row.status === 'running'}
        >
          <SettingFilled />
        </Button>
@@ -210,6 +239,8 @@ function Problems(props) {
        </Button>
        <Button
          className='actionButton'
+         disabled={row.status === 'idle'}
+         onClick={() => showSolutionDrawer(row)}
        >
          <AiOutlineSolution />
        </Button>
@@ -221,41 +252,41 @@ function Problems(props) {
     const response = await playProblem(problemId);
       if (response && response.statusCode === 200) {
         fetchProblems();
-      }
-  }
+      };
+  };
 
   const handleResumeProblem = async (problemId) => {
     const response = await resumeProblem(problemId);
     if (response && response.statusCode === 200) {
       fetchProblems();
-    }
-  }
+    };
+  };
 
   const handlePauseProblem = async (problemId) => {
     const response = await pauseProblem(problemId);
     if (response && response.statusCode === 200) {
       fetchProblems();
-    }
-  }
+    };
+  };
 
   const handleStopProblem = async (problemId) => {
     const response = await stopProblem(problemId);
     if (response && response.statusCode === 200) {
       fetchProblems();
-    }
-  }
+    };
+  };
 
   const handleDeleteProblem = async (problemId) => {
     const response = await deleteProblem(problemId);
     if (response && response.statusCode === 200) {
       fetchProblems();
-    }
-  }
+    };
+  };
 
   const handleEditProblem = (problem) => {
     setSelectedProblem(problem);
-    showDrawer();
-  }
+    showConfigurationDrawer();
+  };
 
   const getStatusTag = (label) => {
     switch (label) {
@@ -267,53 +298,100 @@ function Problems(props) {
         return <Tag color="magenta">Paused</Tag>
       default:
         return <Tag color="red">Error</Tag>
-    }
-  }
+    };
+  };
 
   const onSelectedFile = (fileId) => {
     setSelectedFile(fileId)
-  }
+  };
 
   const handleCreateProblem = async () => {
     await createProblem(selectedFile, problemTitle);
     fetchProblems();
-  }
+  };
 
   const onProblemTitleChange = (e) => {
     setProblemTitle(e.target.value);
-  }
+  };
 
-  const handleSetPopulationSize = (value) => {
+  const handleSetPopulationSize = async (value) => {
     const data = {'population_size': parseInt(value.population_size)};
-    setPopulationSize(selectedProblem.id, data);
-  }
+    const result = await setPopulationSize(selectedProblem.id, data);
+    if (result.statusCode === 200) {
+      message.success('Population size changed successfully.', 5);
+    } else {
+      message.error('Error occurred while setting population size.', 5);
+    };
+  };
 
-  const handleSetTimeCond = (cond) => {
+  const handleSetTimeCond = async (cond) => {
     const data = {
       'applied': cond.applied,
       'bound': parseInt(cond.bound)
     };
 
-    setTimeCondition(selectedProblem.id, data);
-  }
+    const result = await setTimeCondition(selectedProblem.id, data);
+    if (result.statusCode === 200) {
+      message.success("Stopping condition updated successfully.", 5);
+    } else {
+      message.error('Error occurred while updating stopping condition.', 5);
+    };
+  };
 
-  const handleSetFitnessCond = (cond) => {
+  const handleSetFitnessCond = async (cond) => {
     const data = {
       'applied': cond.applied,
       'bound': parseInt(cond.bound)
     };
 
-    setFitnessCondition(selectedProblem.id, data);
-  }
+    const result = await setFitnessCondition(selectedProblem.id, data);
+    if (result.statusCode === 200) {
+      message.success("Stopping condition updated successfully.", 5);
+    } else {
+      message.error('Error occurred while updating stopping condition.', 5);
+    };
+  };
 
-  const handleSetGenerationsCond = (cond) => {
+  const handleSetGenerationsCond = async (cond) => {
     const data = {
       'applied': cond.applied,
       'bound': parseInt(cond.bound)
     };
 
-    setGenerationsCondition(selectedProblem.id, data);
+    const result = await setGenerationsCondition(selectedProblem.id, data);
+    if (result.statusCode === 200) {
+      message.success("Stopping condition updated successfully.", 5);
+    } else {
+      message.error('Error occurred while updating stopping condition.', 5);
+    };
+  };
+
+  const handleSetSelectionMethod = async (data) => {
+    const result = await setSelectionMethod(selectedProblem.id, data)
+    if (result.statusCode === 200) {
+      message.success('Selection method updated successfully.', 5);
+    } else {
+      message.error('Error occurred while updating selection method.', 5);
+    };
   }
+
+  const handleSetCrossoverMethod = async (data) => {
+    const result = await setCrossoverMethod(selectedProblem.id, data);
+    if (result.statusCode === 200) {
+      message.success('Crossover method updated successfully.', 5);
+    } else {
+      message.error('Error occurred while updating crossover method.', 5);
+    };
+  }
+
+  const handleSetMutationMethod = async (data) => {
+    const result = await setMutationMethod(selectedProblem.id, data);
+    if (result.statusCode === 200) {
+      message.success('Mutation method updated successfully.', 5);
+    } else {
+      message.error('Error occurred while updating mutation method');
+    };
+  };
 
   return (
       <div className='problems'>
@@ -378,8 +456,8 @@ function Problems(props) {
           <Drawer
             title='Configure Evolutionary Engine'
             placement='right'
-            onClose={onClose}
-            visible={visible}
+            onClose={onCloseConfigurationDrawer}
+            visible={configurationDrawerVisible}
             width={600}
           >
             <ProblemCollapse
@@ -389,9 +467,21 @@ function Problems(props) {
               setTimeCond={handleSetTimeCond}
               setFitnessCond={handleSetFitnessCond}
               setGenerationsCond={handleSetGenerationsCond}
+              setSelectionMethod={handleSetSelectionMethod}
+              setCrossoverMethod={handleSetCrossoverMethod}
+              setMutationMethod={handleSetMutationMethod}
             >
 
             </ProblemCollapse>
+          </Drawer>
+          <Drawer
+            title='Current best solution'
+            placement='right'
+            onClose={onCloseSolutionDrawer}
+            visible={solutionVisible}
+            width={1000}
+          >
+            {loadingSolution && <Spin />}
           </Drawer>
       </div>
       </div>
