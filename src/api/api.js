@@ -216,3 +216,47 @@ export async function getProgress(problemId) {
     const result = await baseRequest(url, 'GET', headers);
     return result;
 }
+
+export async function getCurrentBestSolution(problemId) {
+    const url = `${baseUrl}/problem/${problemId}/solution`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'GET', headers);
+    return result;
+}
+
+export async function setSelectionMethod(problemId, data) {
+    const url = `${baseUrl}/problem/${problemId}/selection`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
+
+export async function setCrossoverMethod(problemId, data) {
+    const url = `${baseUrl}/problem/${problemId}/crossover`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'PUT', headers, JSON.stringify(data));
+    return result;
+}
+
+export async function setMutationMethod(problemId, data) {
+    const url = `${baseUrl}/problem/${problemId}/mutation`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'POST', headers, JSON.stringify(data));
+    return result;
+}
