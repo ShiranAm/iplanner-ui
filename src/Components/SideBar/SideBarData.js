@@ -4,6 +4,12 @@ import * as AiIcons from 'react-icons/ai';
 
 export const SidebarData = [
     {
+        title: 'Home Page',
+        path: '/',
+        icon: <AiIcons.AiOutlineHome color='#fff'/>,
+        cNAme: 'nav-text'
+    },
+    {
         title: 'Site Data',
         path: '/site-data',
         icon: <AiIcons.AiFillUsb color='#fff'/>,

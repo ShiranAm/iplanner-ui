@@ -77,15 +77,16 @@ function SolutionWeeklyCalendar(props) {
 
     return(
         <>
-            <Space wrap>
-                <Dropdown overlay={productionLinesDropDownMenu}>
-                    <Button>
+            <Space wrap style={{paddingBottom: "20px"}}>
+                <Dropdown overlay={productionLinesDropDownMenu} onChange={fixBadCalendarStyles}>
+                    <Button style={{width: "300px"}}>
                         <Space>
                             Production Lines
                             <DownOutlined />
                         </Space>
                     </Button>
                 </Dropdown>
+                <span>Production Line: {selectedProductionLine}</span>
             </Space>
             <WeeklyCalendar
                 id="weeklyCalendar"
