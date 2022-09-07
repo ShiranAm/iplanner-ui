@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from "react";
-import { getSolutionByProblemId, getProblemById, getSiteData, getSavedSolutions, getSolutionById, editSolution } from "../../api/api";
-import { Table, Modal, Menu, Dropdown, Space, Button, Select, Form, DatePicker } from "antd";
-import { BarChartOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
-import $ from 'jquery';
-import { WeeklyCalendar } from 'antd-weekly-calendar';
+import { getSavedSolutions, getSolutionById, editSolution } from "../../api/api";
+import { Table, Modal, Button, Select, Form, DatePicker } from "antd";
+import { BarChartOutlined} from '@ant-design/icons';
+import SolutionWeeklyCalendar from "../WeeklyCalendar/WeeklyCalendar";
 import moment from 'moment';
 import './Solutions.css'
 const { Option } = Select;
@@ -14,7 +13,7 @@ const { RangePicker } = DatePicker;
 function Solutions(props) {
 
     const [savedSolutions, setSolutions] = useState([]);
-    const [selectedProductionLine, setSelectedProductionLine] = useState(0);
+    // const [selectedProductionLine, setSelectedProductionLine] = useState(0);
     const [solutionAnalyticsModalVisible, setSolutionAnalyticsModalVisible] = useState(false);
     const [solutionAnalyticsModalTitle, setSolutionAnalyticsModalTitle] = useState(false);
     const [solutionForecastData, setSolutionForecastData] = useState([]);
@@ -41,34 +40,6 @@ function Solutions(props) {
         "2": "Bamba 50g",
         "3": "Apropo 50g"
     };
-
-    const handleProductionLineDropDownClick = (e) => {
-        setSelectedProductionLine(e.key)
-    };
-
-    const productionLinesDropDownMenu = (
-        <Menu
-            onClick={handleProductionLineDropDownClick}
-            // TODO: need to make this list dynamic and not hard-coded.
-            items={[
-                {
-                    label: 'Production Line #0',
-                    key: '0',
-                    icon: <UserOutlined />,
-                },
-                {
-                    label: 'Production Line #1',
-                    key: '1',
-                    icon: <UserOutlined />,
-                },
-                {
-                    label: 'Production Line #2',
-                    key: '2',
-                    icon: <UserOutlined />,
-                },
-            ]}
-        />
-    );
 
     const savedSolutionsTableCols = [
         {
@@ -159,62 +130,20 @@ function Solutions(props) {
         }
     }
 
-    const fetchBestSolution = async (problemId) => {
-        const sitesData = await getSiteData();
-        if (!sitesData || sitesData.statusCode !== 200) {
-            console.log("sites data not found")
-            return {}
-        }
-
-        const problem = await getProblemById(problemId);
-        if (!problem || problem.statusCode !== 200) {
-            console.log("problem not found")
-            return {}
-        }
-
-        const solution = await getSolutionByProblemId(problemId);
-        return await convertToCalendarEvents(solution);
-    }
-
-    const convertToCalendarEvents = async (solution) => {
-        const calendarEvents = {}
-
-        Object.entries(solution.data).forEach(([lineId, eventsPerLine]) => {
-                const newEvents = eventsPerLine.map((item, index) => {
-                    let startTime = new Date(item['start_time'].replace(' ', 'T'))
-                    let endTime = new Date(item['end_time'].replace(' ', 'T'))
-                    let title = '#' + item['product_id'] + ' - ' + item['product_name']
-                    let newEvent = { productionLine: item.production_line, key: item.key, startTime: startTime,
-                        endTime: endTime, title: title }
-                    return newEvent
-                })
-
-                calendarEvents[lineId] = newEvents
-            }
-        )
-
-        return calendarEvents
-    }
-
     const fetchSavedSolutions = async () => {
         const solutions = await getSavedSolutions();
         if (solutions && solutions.statusCode === 200) {
-            await Promise.all(solutions.list.map( async (solution) => {
-                solution.solution = await convertToCalendarEvents(solution.solution)
-            }));
+            // await Promise.all(solutions.list.map( async (solution) => {
+            //     solution.solution = await convertToCalendarEvents(solution.solution)
+            // }));
             setSolutions(solutions.list);
         } else {
             setSolutions([]);
         }
     }
 
-    const fixBadCalendarStyles = () => {
-        $('div[style*="top: 16800%"]').css('top', '0%');
-    };
-
     useEffect(() => {
         fetchSavedSolutions();
-        fixBadCalendarStyles();
     }, []);
 
     const handleEditEventClick = (event) => {
@@ -418,22 +347,9 @@ function Solutions(props) {
                                     setCurrentFocusedSolution(solution.id)
                                     return(
                                         <div>
-                                            <Space wrap>
-                                                <Dropdown overlay={productionLinesDropDownMenu}>
-                                                    <Button>
-                                                        <Space>
-                                                            Production Lines
-                                                            <DownOutlined />
-                                                        </Space>
-                                                    </Button>
-                                                </Dropdown>
-                                            </Space>
-                                            <WeeklyCalendar
-                                                id="weeklyCalendar"
-                                                events={solution.solution[selectedProductionLine]}
-                                                onEventClick={handleEditEventClick}
-                                                onSelectDate={fixBadCalendarStyles}
-                                                weekends={true}
+                                            <SolutionWeeklyCalendar
+                                                solution={solution.solution}
+                                                handleEditEventClick={handleEditEventClick}
                                             />
                                         </div>
                                     )

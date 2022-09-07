@@ -7,6 +7,7 @@ import { PlusOutlined,
   DeleteFilled } from "@ant-design/icons";
 import { AiOutlineSolution } from "react-icons/ai";
 import { RiStopMiniFill } from "react-icons/ri";
+import SolutionWeeklyCalendar from "../WeeklyCalendar/WeeklyCalendar";
 import { getSiteData,
   createProblem,
   getAllProblems,
@@ -22,7 +23,9 @@ import { getSiteData,
   getCurrentBestSolution,
   setSelectionMethod,
   setCrossoverMethod,
-  setMutationMethod} from "../../api/api";
+  setMutationMethod,
+  getProblemById,
+  getSolutionByProblemId} from "../../api/api";
 import ProgressBars from "../ProgressBars/ProgressBars";
 import ProblemCollapse from "../ProblemCollapse/ProblemCollapse";
 
@@ -41,6 +44,7 @@ function Problems(props) {
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [loadingSolution, setLoadingSolution] = useState(false);
   const [events, setEvents] = useState(false);
+  const [currentBestSolution, setCurrentBestSolution] = useState(false);
 
   const showConfigurationDrawer = () => {
     setConfigurationDrawerVisible(true);
@@ -53,7 +57,7 @@ function Problems(props) {
     const result = await getCurrentBestSolution(problem.id);
     console.log(result)
     if (result && result.statusCode === 200) {
-
+        setCurrentBestSolution(result);
     }
     setLoadingSolution(false);
 
@@ -474,14 +478,20 @@ function Problems(props) {
 
             </ProblemCollapse>
           </Drawer>
-          <Drawer
-            title='Current best solution'
+            <Drawer
+            title='Current Best Solution'
             placement='right'
             onClose={onCloseSolutionDrawer}
             visible={solutionVisible}
             width={1000}
           >
-            {loadingSolution && <Spin />}
+            {
+                loadingSolution ? <Spin /> :
+                <SolutionWeeklyCalendar
+                solution={loadingSolution ? [] : currentBestSolution}
+                handleEditEventClick={() => null}
+                />
+            }
           </Drawer>
       </div>
       </div>
