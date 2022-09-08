@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { uploadFile, getSiteData, deleteFile } from "../../api/api";
 import { Button, Input, Row, Col, Table } from "antd";
-import { DeleteFilled } from '@ant-design/icons';
+import { DeleteTwoTone } from '@ant-design/icons';
 import {isNull} from "lodash";
 import './SiteData.css'
 
@@ -28,7 +28,7 @@ function SiteData(props) {
             title: 'Action',
             key: 'action',
             width: "20%",
-            render: (data) => (<Button onClick={() => handleDeleteFile(data.id)}><DeleteFilled /></Button>)
+            render: (data) => (<Button onClick={() => handleDeleteFile(data.id)}><DeleteTwoTone /></Button>)
 
         }
     ]

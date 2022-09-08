@@ -1,8 +1,9 @@
 import React, {useEffect, useState} from "react";
-import { getSavedSolutions, getSolutionById, editSolution } from "../../api/api";
+import { getSavedSolutions, getSolutionById, editSolution, deleteSolution } from "../../api/api";
 import {getSolutionForecastData, getRawMaterialsUsageData, getProdLineUtilData} from "../Solutions/SolutionAnalyticsHelpers";
-import { Table, Modal, Button, Select, Form, DatePicker } from "antd";
-import { BarChartOutlined } from '@ant-design/icons';
+import { Table, Modal, Button, Select, Form, DatePicker, Tag } from "antd";
+import { BarChartOutlined, DeleteOutlined } from '@ant-design/icons';
+import _ from "lodash";
 import SolutionWeeklyCalendar from "../WeeklyCalendar/WeeklyCalendar";
 import SolutionAnalytics from "../Solutions/SolutionAnalytics";
 import moment from 'moment';
@@ -51,25 +52,26 @@ function Solutions(props) {
             title: 'Id',
             dataIndex: 'id',
             key: 'id',
-            width: "30%"
+            width: "200px"
         },
         {
             title: 'Problem Id',
             dataIndex: 'problem_id',
             key: 'problem_id',
-            width: "30%"
+            width: "200px"
         },
         {
             title: 'Title',
             dataIndex: 'title',
             key: 'title',
-            width: "100%"
+            width: "40%"
         },
         {
             title: 'Fitness Score',
             dataIndex: 'fitness',
             key: 'fitness',
-            width: "100%"
+            width: "30%",
+            render: (data) => (<Tag color='geekblue'>{data.toFixed(2)}</Tag>)
         },
         {
             title: 'Analytics',
@@ -77,8 +79,22 @@ function Solutions(props) {
             width: "20%",
             render: (data) => (<Button onClick={() => handleShowSolutionAnalytics(data.id)}><BarChartOutlined /></Button>)
 
+        },
+        {
+            title: '',
+            key: 'delete',
+            width: "20%",
+            render: (data) => (<Button onClick={() => handleDeleteSolution(data.id)}><DeleteOutlined /></Button>)
         }
     ]
+
+    const handleDeleteSolution = async (solutionId) => {
+        const result = await deleteSolution(solutionId);
+        if (result.statusCode === 200) {
+            fetchSavedSolutions();
+        }
+
+    }
 
     const handleShowSolutionAnalytics = async (solutionId) => {
         console.log("solution id: " + solutionId);
@@ -276,11 +292,11 @@ function Solutions(props) {
                 <h1 id='saved-solutions-h1'>Saved Solutions</h1>
                 <hr />
                 <div className='tableContainer'>
-                    <div style={{width: "1300px", textAlign: '-webkit-center', marginTop: '20px'}}>
+                    <div style={{width: "1000px", textAlign: '-webkit-center', marginTop: '20px'}}>
                         <Table
                             rowKey={"id"}
                             columns={savedSolutionsTableCols}
-                            dataSource={savedSolutions}
+                            dataSource={_.cloneDeep(savedSolutions)}
                             expandable={{
                                 expandedRowRender: (solution) => {
                                     setCurrentFocusedSolution(solution.id)

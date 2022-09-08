@@ -249,7 +249,7 @@ function ProblemCollapse(props) {
 
   return (
     <div className='collapse-section'>
-      <Collapse style={{width: 'inherit'}}>
+      <Collapse accordion style={{width: 'inherit'}}>
         <Panel header='Set Population Size'>
           <Form
             layout='inline'

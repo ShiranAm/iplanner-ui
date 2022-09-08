@@ -52,6 +52,7 @@ function Problems(props) {
   const [loadingSolution, setLoadingSolution] = useState(false);
   const [events, setEvents] = useState(false);
   const [currentBestSolution, setCurrentBestSolution] = useState(false);
+  const [solutionTitle, setSolutionTitle] = useState("");
 
   const [solutionAnalyticsComponentTitle, setSolutionAnalyticsComponentTitle] = useState("");
   const [solutionAnalyticsComponentSolution, setSolutionAnalyticsComponentSolution] = useState(false);
@@ -60,6 +61,7 @@ function Problems(props) {
   const [rawMaterialsUsageData, setAnalyticsRawMaterialsUsageData] = useState(false);
   const [prodLineUtilData, setAnalyticsProdLineUtilData] = useState(false);
   const [loadingAnalyticsData, setLoadingAnalyticsData] = useState(true);
+  const [currSolutionFitness, setCurrSolutionFitness] = useState(null);
 
   const showConfigurationDrawer = () => {
     setConfigurationDrawerVisible(true);
@@ -73,6 +75,7 @@ function Problems(props) {
     console.log(result)
     if (result && result.statusCode === 200) {
         setCurrentBestSolution(result);
+        setCurrSolutionFitness(result.fitness)
     }
     setLoadingSolution(false);
 
@@ -102,6 +105,7 @@ function Problems(props) {
     const problems = await getAllProblems();
     if (problems && problems.statusCode === 200) {
       setExistingProblems(problems.list);
+      console.log(problems.list)
     } else {
       setExistingProblems([]);
     }
@@ -223,8 +227,9 @@ function Problems(props) {
    width: '200',
    render: (row) => (
      <div className='actionContainer' style={{dispaly: 'flex', justifyContent: 'center'}}>
-       {(row.status === 'idle' || row.status === 'paused') ? (<Button
+       {(row.status === 'idle' || row.status === 'paused' || row.status === 'finished') ? (<Button
          className='actionButton'
+         disabled={row.status === 'finished'}
          onClick={row.status === 'idle'? () => handlePlayProblem(row.id) : () => handleResumeProblem(row.id)}
        >
          <CaretRightOutlined />
@@ -314,7 +319,9 @@ function Problems(props) {
       case 'running':
         return <Tag color="green">Running</Tag>;
       case 'paused':
-        return <Tag color="magenta">Paused</Tag>
+        return <Tag color="magenta">Paused</Tag>;
+      case 'finished':
+        return <Tag color="cyan">Finished</Tag>;
       default:
         return <Tag color="red">Error</Tag>
     };
@@ -419,6 +426,7 @@ function Problems(props) {
           setSolutionAnalyticsComponentTitle("Problem #" + problemId + " Best Solution Analytics");
           // set props.solution of SolutionAnalyticsComponent (useState)
           setSolutionAnalyticsComponentSolution(solution)
+        console.log(solution)
           // these things need to be in SolutionAnalyticsComponent
           setAnalyticsForecastData(getSolutionForecastData(solution));
           setAnalyticsRawMaterialsUsageData(getRawMaterialsUsageData(solution));
@@ -434,9 +442,9 @@ function Problems(props) {
   };
 
   const saveCurrentSolution = async(selectedProblemId) => {
-      const result = await saveCurrentBestSolution(selectedProblemId, "TODO title - get from user")
+      const result = await saveCurrentBestSolution(selectedProblemId, solutionTitle)
       if (result && result.statusCode === 200) {
-          console.log("Best solution for problem id #" + selectedProblemId + " saved successfully")
+        message.success(`Best solution for problem id #` + `${selectedProblemId}` + ` saved successfully.`, 5);
       }
   }
 
@@ -497,7 +505,7 @@ function Problems(props) {
                     />
 
                   ),
-                  rowExpandable : (row) => row.status !== 'idle'
+                  rowExpandable : (row) => row.status !== 'idle' && row.status !== 'finished'
                 }}
               >
               </Table>
@@ -531,8 +539,14 @@ function Problems(props) {
             visible={solutionVisible}
             width={1000}
           >
-            <Button onClick={() => handleShowSolutionAnalytics(selectedProblem.id)}><BarChartOutlined /></Button>
-            {
+              <div style={{display: "flex", justifyContent: "start", marginBottom: "10px"}}>
+                <span style={{marginRight: "10px"}}>{`Fitness: ${parseInt(currSolutionFitness)?.toFixed(2)}`}</span>
+                <Button style={{marginRight: "10px"}} onClick={() => handleShowSolutionAnalytics(selectedProblem.id)}><BarChartOutlined /></Button>
+                <Input placeholder="Title the solution" onChange={(e) => setSolutionTitle(e.target.value)} style={{width: "200px", marginRight: "10px"}}></Input>
+                <Button onClick={() => saveCurrentSolution(selectedProblem.id)}><SaveOutlined /></Button>
+              </div>
+
+              {
                 loadingSolution ? <Spin /> :
                 <SolutionWeeklyCalendar
                 solution={loadingSolution ? [] : currentBestSolution}
@@ -551,7 +565,6 @@ function Problems(props) {
               forecastData={forecastData}
           >
           </SolutionAnalytics>
-          <Button onClick={() => saveCurrentSolution(selectedProblem.id)}><SaveOutlined /></Button>
       </div>
       </div>
   )

@@ -354,3 +354,14 @@ export async function setMutationMethod(problemId, data) {
     const result = await baseRequest(url, 'POST', headers, JSON.stringify(data));
     return result;
 }
+
+export async function deleteSolution(solutionId) {
+    const url = `${baseUrl}/favorite-solution/${solutionId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const result = await baseRequest(url, 'DELETE', headers);
+    return result;
+}
