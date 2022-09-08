@@ -25,6 +25,11 @@ function ProgressBars(props) {
       setTimeApplied(result.TIME_STOPPING_CONDITION.applied);
       setFitnessApplied(result.FITNESS_STOPPING_CONDITION.applied);
       setGenerationsApplied(result.GENERATIONS_STOPPING_CONDITION.applied);
+
+      if (result.FITNESS_STOPPING_CONDITION.progress == 100.0 || result.TIME_STOPPING_CONDITION.progress == 100.0 ||
+      result.GENERATIONS_STOPPING_CONDITION.progress == 100.0) {
+        props.onFinish();
+      }
     }
   }
 

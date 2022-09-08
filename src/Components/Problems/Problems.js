@@ -4,7 +4,9 @@ import { PlusOutlined,
   CaretRightOutlined,
   PauseOutlined,
   SettingFilled,
-  DeleteFilled } from "@ant-design/icons";
+  DeleteFilled,
+  BarChartOutlined,
+  SaveOutlined } from "@ant-design/icons";
 import { AiOutlineSolution } from "react-icons/ai";
 import { RiStopMiniFill } from "react-icons/ri";
 import SolutionWeeklyCalendar from "../WeeklyCalendar/WeeklyCalendar";
@@ -25,9 +27,14 @@ import { getSiteData,
   setCrossoverMethod,
   setMutationMethod,
   getProblemById,
-  getSolutionByProblemId} from "../../api/api";
+  getSolutionByProblemId,
+  saveCurrentBestSolution } from "../../api/api";
+import {getSolutionForecastData,
+    getRawMaterialsUsageData,
+    getProdLineUtilData} from "../Solutions/SolutionAnalyticsHelpers";
 import ProgressBars from "../ProgressBars/ProgressBars";
 import ProblemCollapse from "../ProblemCollapse/ProblemCollapse";
+import SolutionAnalytics from "../Solutions/SolutionAnalytics";
 
 import './Problems.css'
 
@@ -45,6 +52,14 @@ function Problems(props) {
   const [loadingSolution, setLoadingSolution] = useState(false);
   const [events, setEvents] = useState(false);
   const [currentBestSolution, setCurrentBestSolution] = useState(false);
+
+  const [solutionAnalyticsComponentTitle, setSolutionAnalyticsComponentTitle] = useState("");
+  const [solutionAnalyticsComponentSolution, setSolutionAnalyticsComponentSolution] = useState(false);
+  const [solutionAnalyticsModalVisible, setSolutionAnalyticsModalVisible] = useState(false);
+  const [forecastData, setAnalyticsForecastData] = useState(false);
+  const [rawMaterialsUsageData, setAnalyticsRawMaterialsUsageData] = useState(false);
+  const [prodLineUtilData, setAnalyticsProdLineUtilData] = useState(false);
+  const [loadingAnalyticsData, setLoadingAnalyticsData] = useState(true);
 
   const showConfigurationDrawer = () => {
     setConfigurationDrawerVisible(true);
@@ -397,6 +412,34 @@ function Problems(props) {
     };
   };
 
+  const handleShowSolutionAnalytics = async (problemId) => {
+      console.log("solution of problem id: " + problemId);
+      const solution = await getCurrentBestSolution(problemId);
+      if (solution.statusCode === 200) {
+          setSolutionAnalyticsComponentTitle("Problem #" + problemId + " Best Solution Analytics");
+          // set props.solution of SolutionAnalyticsComponent (useState)
+          setSolutionAnalyticsComponentSolution(solution)
+          // these things need to be in SolutionAnalyticsComponent
+          setAnalyticsForecastData(getSolutionForecastData(solution));
+          setAnalyticsRawMaterialsUsageData(getRawMaterialsUsageData(solution));
+          setAnalyticsProdLineUtilData(getProdLineUtilData(solution));
+          setSolutionAnalyticsModalVisible(true);
+          setLoadingAnalyticsData(false);
+      }
+  }
+
+  const handleSolutionAnalyticsModalCancel = () => {
+      setSolutionAnalyticsModalVisible(false)
+      setLoadingAnalyticsData(true);
+  };
+
+  const saveCurrentSolution = async(selectedProblemId) => {
+      const result = await saveCurrentBestSolution(selectedProblemId, "TODO title - get from user")
+      if (result && result.statusCode === 200) {
+          console.log("Best solution for problem id #" + selectedProblemId + " saved successfully")
+      }
+  }
+
   return (
       <div className='problems'>
           <h1 id='problems-h1'>Manage Problems</h1>
@@ -448,7 +491,10 @@ function Problems(props) {
                 style={{paddingLeft: '80px', paddingRight: '80px'}}
                 expandable={{
                   expandedRowRender: (row) => (
-                    <ProgressBars problemId={row.id} />
+                    <ProgressBars
+                        problemId={row.id}
+                        onFinish={fetchProblems}
+                    />
 
                   ),
                   rowExpandable : (row) => row.status !== 'idle'
@@ -485,6 +531,7 @@ function Problems(props) {
             visible={solutionVisible}
             width={1000}
           >
+            <Button onClick={() => handleShowSolutionAnalytics(selectedProblem.id)}><BarChartOutlined /></Button>
             {
                 loadingSolution ? <Spin /> :
                 <SolutionWeeklyCalendar
@@ -493,6 +540,18 @@ function Problems(props) {
                 />
             }
           </Drawer>
+          <SolutionAnalytics
+              visible={solutionAnalyticsModalVisible}
+              handleSolutionAnalyticsModalCancel={handleSolutionAnalyticsModalCancel}
+              title={solutionAnalyticsComponentTitle}
+              solution={solutionAnalyticsComponentSolution}
+              loadingAnalyticsData={loadingAnalyticsData}
+              prodLineUtilData={prodLineUtilData}
+              rawMaterialsUsageData={rawMaterialsUsageData}
+              forecastData={forecastData}
+          >
+          </SolutionAnalytics>
+          <Button onClick={() => saveCurrentSolution(selectedProblem.id)}><SaveOutlined /></Button>
       </div>
       </div>
   )

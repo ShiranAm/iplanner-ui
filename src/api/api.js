@@ -305,6 +305,23 @@ export async function getCurrentBestSolution(problemId) {
     return result;
 }
 
+export async function saveCurrentBestSolution(problemId, title) {
+    const url = `${baseUrl}/favorite-solution`;
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': "*"
+    };
+
+    const data = {
+        "title": title,
+        "problem_id": problemId
+    };
+
+    const result = await baseRequest(url, 'POST', headers, JSON.stringify(data));
+    return result;
+}
+
 export async function setSelectionMethod(problemId, data) {
     const url = `${baseUrl}/problem/${problemId}/selection`;
     const headers = {

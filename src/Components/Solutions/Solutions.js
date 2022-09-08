@@ -1,8 +1,10 @@
 import React, {useEffect, useState} from "react";
 import { getSavedSolutions, getSolutionById, editSolution } from "../../api/api";
+import {getSolutionForecastData, getRawMaterialsUsageData, getProdLineUtilData} from "../Solutions/SolutionAnalyticsHelpers";
 import { Table, Modal, Button, Select, Form, DatePicker } from "antd";
-import { BarChartOutlined} from '@ant-design/icons';
+import { BarChartOutlined } from '@ant-design/icons';
 import SolutionWeeklyCalendar from "../WeeklyCalendar/WeeklyCalendar";
+import SolutionAnalytics from "../Solutions/SolutionAnalytics";
 import moment from 'moment';
 import './Solutions.css'
 const { Option } = Select;
@@ -13,12 +15,15 @@ const { RangePicker } = DatePicker;
 function Solutions(props) {
 
     const [savedSolutions, setSolutions] = useState([]);
-    // const [selectedProductionLine, setSelectedProductionLine] = useState(0);
+
+    const [solutionAnalyticsComponentTitle, setSolutionAnalyticsComponentTitle] = useState("");
+    const [solutionAnalyticsComponentSolution, setSolutionAnalyticsComponentSolution] = useState(false);
     const [solutionAnalyticsModalVisible, setSolutionAnalyticsModalVisible] = useState(false);
-    const [solutionAnalyticsModalTitle, setSolutionAnalyticsModalTitle] = useState(false);
-    const [solutionForecastData, setSolutionForecastData] = useState([]);
-    const [prodLineUtilData, setProdLineUtilData] = useState([]);
-    const [rawMaterialsUsageData, setRawMaterialsUsageData] = useState([]);
+    const [forecastData, setAnalyticsForecastData] = useState(false);
+    const [rawMaterialsUsageData, setAnalyticsRawMaterialsUsageData] = useState(false);
+    const [prodLineUtilData, setAnalyticsProdLineUtilData] = useState(false);
+    const [loadingAnalyticsData, setLoadingAnalyticsData] = useState(true);
+
     const [editEventCurrentProduct, setEditEventCurrentProduct] = useState("");
     const [editEventCurrentDateTime, setEditEventCurrentDateTime] = useState(["", ""]);
     const [editEventDefaultDateTime, setEditEventDefaultDateTime] = useState(["", ""]);
@@ -75,60 +80,27 @@ function Solutions(props) {
         }
     ]
 
-    const analyticsTableColumns = [
-        {
-            title: 'Key',
-            dataIndex: 'key',
-            key: 'key',
-            width: "10%"
-        },
-        {
-            title: 'Value',
-            dataIndex: 'value',
-            key: 'value',
-            width: "10%"
-        },
-    ]
-
-    const handleSolutionAnalyticsModalCancel = () => {
-        setSolutionAnalyticsModalVisible(false)
-    };
-
-    const fillSolutionForecastData = (solution) => {
-        let forecastsList = [];
-        for (let [productId, forecastAchieved] of Object.entries(solution.forecast_achieved)) {
-            forecastsList.push({'key': "Product #" + productId, 'value': forecastAchieved + " %"})
-        }
-        setSolutionForecastData(forecastsList)
-    }
-
-    const fillRawMaterialsUsageData = (solution) => {
-        let rawMaterialsList = [];
-        for (let [materialId, usage] of Object.entries(solution.raw_materials_usage)) {
-            rawMaterialsList.push({'key': "Material #" + materialId, 'value': usage + " %"})
-        }
-        setRawMaterialsUsageData(rawMaterialsList)
-    }
-
-    const fillProdLineUtilData = (solution) => {
-        let prodLinesUtilList = [];
-        for (let [prodLineId, utilPercentage] of Object.entries(solution.product_line_utilization)) {
-            prodLinesUtilList.push({'key': "Production Line #" + prodLineId, 'value': utilPercentage + " %"})
-        }
-        setProdLineUtilData(prodLinesUtilList)
-    }
-
     const handleShowSolutionAnalytics = async (solutionId) => {
         console.log("solution id: " + solutionId);
         const solution = await getSolutionById(solutionId);
-        setSolutionAnalyticsModalTitle("Solution #" + solutionId + " Analytics");
+
         if (solution.statusCode === 200) {
-            fillSolutionForecastData(solution);
-            fillRawMaterialsUsageData(solution);
-            fillProdLineUtilData(solution);
+            setSolutionAnalyticsComponentTitle("Solution #" + solutionId + " Analytics");
+            // set props.solution of SolutionAnalyticsComponent (useState)
+            setSolutionAnalyticsComponentSolution(solution)
+            // these things need to be in SolutionAnalyticsComponent
+            setAnalyticsForecastData(getSolutionForecastData(solution));
+            setAnalyticsRawMaterialsUsageData(getRawMaterialsUsageData(solution));
+            setAnalyticsProdLineUtilData(getProdLineUtilData(solution));
             setSolutionAnalyticsModalVisible(true);
+            setLoadingAnalyticsData(false);
         }
     }
+
+    const handleSolutionAnalyticsModalCancel = () => {
+        setSolutionAnalyticsModalVisible(false)
+        setLoadingAnalyticsData(true);
+    };
 
     const fetchSavedSolutions = async () => {
         const solutions = await getSavedSolutions();
@@ -289,50 +261,17 @@ function Solutions(props) {
                     </Form.Item>
                 </Form>
             </Modal>
-            <Modal
+            <SolutionAnalytics
                 visible={solutionAnalyticsModalVisible}
-                title={solutionAnalyticsModalTitle}
-                onCancel={handleSolutionAnalyticsModalCancel}
-                footer={[
-                    <Button key="back" onClick={handleSolutionAnalyticsModalCancel}>
-                        Return
-                    </Button>
-                ]}
+                handleSolutionAnalyticsModalCancel={handleSolutionAnalyticsModalCancel}
+                title={solutionAnalyticsComponentTitle}
+                solution={solutionAnalyticsComponentSolution}
+                loadingAnalyticsData={loadingAnalyticsData}
+                prodLineUtilData={prodLineUtilData}
+                rawMaterialsUsageData={rawMaterialsUsageData}
+                forecastData={forecastData}
             >
-                <p>
-                    <h4><b>Forecast Achieved</b></h4>
-                    <br></br>
-                    <Table
-                        columns={analyticsTableColumns}
-                        dataSource={solutionForecastData}
-                        size="small"
-                        bordered={false}
-                        showHeader={false}
-                    />
-                </p>
-                <p>
-                    <h4><b>Production Line Utilization</b></h4>
-                    <br></br>
-                    <Table
-                        columns={analyticsTableColumns}
-                        dataSource={prodLineUtilData}
-                        size="small"
-                        bordered={false}
-                        showHeader={false}
-                    />
-                </p>
-                <p>
-                    <h4><b>Raw Materials Usage</b></h4>
-                    <br></br>
-                    <Table
-                        columns={analyticsTableColumns}
-                        dataSource={rawMaterialsUsageData}
-                        size="small"
-                        bordered={false}
-                        showHeader={false}
-                    />
-                </p>
-            </Modal>
+            </SolutionAnalytics>
             <div className='solutions'>
                 <h1 id='saved-solutions-h1'>Saved Solutions</h1>
                 <hr />
